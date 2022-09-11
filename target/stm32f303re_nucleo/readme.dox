@@ -1,0 +1,22 @@
+/**
+@dir target/stm32f303re_nucleo
+@brief STM32F303RE Nucleo 64-pins @ref stm32f303re_nucleo "details"
+*/
+/**
+@page Targets
+
+@section stm32f303re_nucleo
+
+@subsection stm32f303re_nucleo-pinout Pinout
+
+| Pin name | Pin number (package) | Function      | Channel / sub-function  | Notes |
+|----------|----------------------|---------------|-------------------------|-------|
+| PA0 / A0 | 14                   | Voltmeter     | Channel 1             | |
+| PA1 / A1 | 15                   | Voltmeter     | Channel 2             | |
+| PA4 / A4 | 20                   | Generator     | | DAC output buffer enabled |
+| PA6 / D12| 22                   | Oscilloscope  | Channel 1 | |
+| PC4      | 24                   | Oscilloscope  | Channel 2 | |
+| PA7 / D11| 23                   | PWM output    | | |
+| PB14     | 35                   | PWM input     | | |
+| PA8 / D7 | 41                   | Pulse counter | | |
+*/

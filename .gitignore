@@ -1,0 +1,7 @@
+/build*
+!/build.sh
+/Makefile.user
+/doc
+/dfu_list.txt
+/target_list.txt
+*~

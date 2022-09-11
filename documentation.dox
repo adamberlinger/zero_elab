@@ -1,0 +1,86 @@
+/**
+
+@page arch Software architecture overview
+
+This chapter contains brief architecture overview and explanation of
+some software design decisions
+
+@tableofcontents
+
+@section arch-principles Basic principles
+
+This project is intended for different MCU devices (mainly STM32 devices).
+Since these devices are different in hardware and peripherals,
+there needs to be different implementation for each device.
+On the other hand, some internal peripherals are same across some devices,
+or are similar. It would be then inappropriate to have separated implementation
+for every particular device.
+
+@subsection arch-principles-inheritance Inheritance
+
+To solve this issue, the target implementations use "inheritance" similar
+to the inheritance used OOP (Object oriented programming). For instance
+STM32 contains ARM Cortex-M core which is common for all ARM Corex-M based
+devices. So STM32 inherits part of the implementation from ARM called arm_common.
+Also all STM32 devices have very similar timer and GPIO (except for STM32F1 family)
+peripherals, so driver for timers and GPIOs is implemented in stm32_common target.
+
+@subsection arch-principles-doc Documentation issues
+
+Since there are multiple definitions of the same type/function,
+the generated doxygen documentation can sometimes show weird results
+and point to platform dependent implementations.
+For handle structures it is useful to first define/typedef platform dependent
+structure (e.g. \ref adc_handle_stm32f0_t) and then typedef the platform independent
+e.g. \ref adc_handle_t like:
+\code{.c} typedef adc_handle_stm32f0_t adc_handle_t; \endcode
+
+@section arch-init Application initialization
+
+This section describes different initialization functions,
+where there should be implemented and in which order they are called.
+
+First of all, there should be C environment initialization.
+This means that RW sections should be loaded from non-volatile memory
+(such as FLASH) into volatile memory (such as SRAM).
+RW sections usually contain default values for global variables.
+
+Then the \ref main function is executed, which calls additional init functions:
+ - \ref init_cpu --- This function should initialize MCU internal clocks
+ - (optional) \ref gpio_init_pins --- This function configures unused pins to optimize
+        power consumption. This function is platform independent, but it calls platform
+        dependent GPIO functions.
+ - \ref init_ms_ticks --- Initialize internal system timer (SysTick for ARM)
+ - \ref target_init --- Initialize target features such as communication interfaces
+ - \ref functions_init --- Initialize function \ref modules
+
+The \init_ms_ticks function and C environment initialization should be
+implemented in MCU architecture target (such as arm_common).
+
+The \init_cpu should be implemented in MCU family target.
+
+The \ref functions_init and \ref target_init should be defined in particular device
+targets. The \ref function_init might be common for different targets, so it might
+be implemented in some common target.
+
+@section arch-drivers Peripheral drivers
+
+Project contains standardize API for several peripherals defined in \ref api folder.
+Each API function have platform independent prototype (e.g. \ref adc_init),
+which then calls platform dependent prototype (e.g. \ref adc_target_init).
+This enables e.g. to check input parameters, or do some common processing
+in the platform independent part of the function.
+All platform dependent prototypes (e.g. \ref adc_target_init) are defined
+as inline.
+
+@section arch-modules Functional modules
+
+Project contains several functional and measurement modules which are derived
+from the peripheral API or the circular buffer API.
+Multiple modules can be active at a time and processing is currently
+scheduled as round robin (it might be changed in future).
+Also when command arrives from PC application, the command is passed to
+each module, to check if it can be processed by that particular module.
+Modules are stored in linked-list.
+
+*/

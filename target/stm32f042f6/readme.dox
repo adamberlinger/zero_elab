@@ -1,0 +1,26 @@
+/**
+@dir target/stm32f042f6
+@brief Bare-metal STM32F042 TSSOP20 @ref stm32f042f6 "details"
+*/
+/**
+@page Targets
+
+@section stm32f042f6
+
+Maximum sampling frequency achieved by oscilloscope is 666.666 kHz for single
+channel
+
+@subsection stm32f042f6-pinout Pinout
+
+| Pin name | Pin number (package) | Function      | Channel / sub-function  | Notes |
+|----------|----------------------|---------------|-------------------------|-------|
+| PA5      | 11                   | Oscilloscope  | Channel 1             | |
+| PA6      | 12                   | Oscilloscope  | Channel 2             | |
+| PA7      | 13                   | Oscilloscope  | Channel 3             | |
+| PA11     | 17 (remapped)        | USB           | D- | White color |
+| PA12     | 18 (remapped)        | USB           | D+ | Green color |
+| PB1      | 14                   | PWM output    | | |
+| PA0 - PA7| 6 - 13               | Log. analyzer | | PA5-PA7 not working |
+| BOOT0    | 1                    | Boot selection| | |
+
+*/

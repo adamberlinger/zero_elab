@@ -1,0 +1,9 @@
+<IncludeLibs></IncludeLibs>
+<IncludeLibsPath></IncludeLibsPath>
+<Misc>--diag_suppress=L6329</Misc>
+<LinkerInputFile></LinkerInputFile>
+<DisabledWarnings></DisabledWarnings>
+</LDads>
+</TargetArmAds>
+</TargetOption>
+<Groups>

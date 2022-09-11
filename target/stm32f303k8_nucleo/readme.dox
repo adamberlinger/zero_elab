@@ -1,0 +1,26 @@
+/**
+@dir target/stm32f303k8_nucleo
+@brief STM32F303K8 Nucleo 32-pins @ref stm32f303k8_nucleo "details"
+*/
+/**
+@page Targets
+
+@section stm32f303k8_nucleo
+
+@subsection stm32f303k8_nucleo-pinout Pinout
+
+| Pin name | Pin number (package) | Function      | Channel / sub-function  | Notes |
+|----------|----------------------|---------------|-------------------------|-------|
+| PA3 / A2 |  9                   | Voltmeter     | Channel 1             | |
+| PB0 / D3 | 14                   | Voltmeter     | Channel 2             | |
+| PA0 / A0 |  6                   | Voltmeter     | Channel 3 +           | |
+| PA1 / A1 |  7                   | Voltmeter     | Channel 3 -           | |
+| PA4 / A3 | 10                   | Generator     | | DAC output buffer enabled |
+| PA5 / A4 | 11                   | Oscilloscope  | Channel 1 | |
+| PA6 / A5 | 12                   | Oscilloscope  | Channel 2 | |
+| PA7 / A6 | 13                   | Oscilloscope  | Channel 3 | |
+| PA12 / D2| 22                   | PWM output    | | |
+| PB4 / D12| 27                   | PWM input     | | |
+| PA2      |  8                   | UART TX       | | |
+| PA15     | 25                   | UART RX       | | |
+*/

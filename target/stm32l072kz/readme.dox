@@ -1,0 +1,26 @@
+/**
+@dir target/stm32l072kz
+@brief Bare-metal STM32L072 LQFP32 @ref stm32l072kz "details"
+*/
+/**
+@page Targets
+
+@section stm32l072kz
+
+Maximum sampling frequency achieved by oscilloscope is 666.666 kHz for single
+channel
+
+@subsection stm32f042k6-pinout Pinout
+
+| Pin name | Pin number (package) | Function      | Channel / sub-function  | Notes |
+|----------|----------------------|---------------|-------------------------|-------|
+| PA0      | 6                    | Oscilloscope  | Channel 1             | |
+| PA1      | 7                    | Oscilloscope  | Channel 2             | |
+| PA7      | 13                   | Oscilloscope  | Channel 3             | |
+| PA4      | 10                   | Generator     | | |
+| PA11     | 21                   | USB           | D- | White color |
+| PA12     | 22                   | USB           | D+ | Green color |
+| PB0      | 14                   | PWM output    | | |
+| BOOT0    | 31                   | Boot selection| | |
+
+*/
