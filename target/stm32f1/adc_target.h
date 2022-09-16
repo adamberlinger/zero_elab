@@ -309,11 +309,11 @@ public:
             if(channel_mask & (1 << i)){
                 /* Single ended channels */
                 if(this->configured_channels[i] < 20){
-                    this->configureRegularSequence(i,this->configured_channels[i],this->global_sample_time);
+                    this->configureRegularSequence(this->active_channels,this->configured_channels[i],this->global_sample_time);
                 }
                 /* Differential channels */
                 else {
-                    this->configureRegularSequence(i,this->configured_channels[i]-20,this->global_sample_time);
+                    this->configureRegularSequence(this->active_channels,this->configured_channels[i]-20,this->global_sample_time);
                 }
                 this->active_channels++;
             }
