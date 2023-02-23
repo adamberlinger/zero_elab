@@ -42,12 +42,6 @@
     #define NUM_DMA_CHANNELS (7)
 #endif
 
-#ifdef STM32L0XX
-
-    void dma_set_source(dma_handle_t dma,uint8_t selection);
-
-#endif
-
 #ifdef __cplusplus
     }
 #endif
