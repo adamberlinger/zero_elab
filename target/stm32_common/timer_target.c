@@ -119,7 +119,7 @@ int timer_target_init(timer_handle_t* timer_handle, int timer_id, const timer_in
     if(init_data->usage == TIMER_USAGE_INTERNAL){
         /* TRGO on update event */
         cr2 |= (2 << 4);
-#ifdef STM32G0XX
+#if defined(STM32G0XX) || defined(STM32C0XX)
         /* TRGO 2 */
         if(timer_id == 1){
             cr2 |= (2 << 20);

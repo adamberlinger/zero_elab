@@ -29,78 +29,53 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _STM32_COMMON_H_
-#define _STM32_COMMON_H_
+#ifndef _ADC_TARGET_DB_H_
+#define _ADC_TARGET_DB_H_
 
-#ifdef STM32F4XX
-    #include "stm32f4xx.h"
-#elif STM32F3XX
-    #include "stm32f3xx.h"
-#elif STM32F0XX
-    #include "stm32f0xx.h"
-
-    #define DMA1_Channel4_7_IRQn DMA1_Channel4_5_IRQn
-
-    #undef USB_EP_TYPE_MASK
-    #undef USB_EP_BULK
-    #undef USB_EP_CONTROL
-    #undef USB_EP_ISOCHRONOUS
-    #undef USB_EP_INTERRUPT
-    #undef USB_EP_T_MASK
-#elif STM32L0XX
-    #include "stm32l0xx.h"
-
-    #define DMA1_Channel4_7_IRQn DMA1_Channel4_5_6_7_IRQn
-    #define DMA_TARGET_SOURCE_SELECT
-#elif STM32F1XX
-    #include "stm32f1xx.h"
-
-    #define USB_IRQn USB_LP_CAN1_RX0_IRQn
-#elif STM32G0XX
-    #include "stm32g0xx.h"
-#elif STM32C0XX
-    #include "stm32c0xx.h"
-#else
-    #error "STM32 target not recognized. Missing define"
-#endif
-
-#include "core.h"
-
-#define GPIO_PORT_MASK  (uint16_t)(0xFFF0)
-#define GPIO_PIN_MASK   (uint16_t)(0xF)
-
-#define DEFINE_PIN(port,pin) (gpio_pin_t)(((uint32_t)(port) & GPIO_PORT_MASK) | ((uint16_t)(pin) & GPIO_PIN_MASK))
-
-#ifdef STM_NUCLEO32
-    #include "nucleo32_pindef.h"
-#endif
-#ifdef STM_NUCLEO
-    #include "nucleo_pindef.h"
-#endif
+#include <stdint.h>
+#include "stm32_common.h"
+#include "stm32_dma.h"
 
 #ifdef __cplusplus
     extern "C" {
 #endif
 
-typedef uint16_t gpio_pin_t;
+#define ADC_PIN_DB_SIZE 19
 
-typedef enum {
-    MODE_OUT_PP,
-    MODE_OUT_OD,
-    MODE_IN,
-    MODE_AN
-} gpio_mode_t;
+#define ADC_DMA_DB_SIZE 1
+#define ADC_TIM_DB_SIZE 2
+#define ADC_SAMPLETIME_DB_SIZE 8
 
-void stm32_gpio_init(gpio_pin_t pin,gpio_mode_t mode);
-void stm32_gpio_af(gpio_pin_t pin,gpio_mode_t mode,int af_number);
-void stm32_gpio_pullup(gpio_pin_t pin);
-void stm32_gpio_pulldown(gpio_pin_t pin);
-void stm32_target_clken(GPIO_TypeDef* port);
-void stm32_common_init(void);
-int stm32_gpio_read(gpio_pin_t pin);
+#define DEFINE_ADC_CHANNEL(adc,channel) (uint16_t)(((adc & 0xFF) << 8) | (channel & 0xFF))
+#define EXPORT_ADC_ID(adc_channel)      (int)((adc_channel >> 8) & 0xFF)
+#define EXPORT_ADC_CHANNEL(adc_channel)      (int)(adc_channel & 0xFF)
 
-GPIO_TypeDef* stm32_get_port(gpio_pin_t pin);
-uint8_t stm32_get_pindef(gpio_pin_t pin);
+typedef struct {
+    uint16_t adc_channel;
+    gpio_pin_t pin;
+}adc_pin_db_t;
+
+typedef struct {
+    uint8_t adc_id;
+    uint32_t dmamux_select;
+}adc_dma_db_t;
+
+typedef struct {
+    uint8_t adc_id;
+    uint8_t timer_id;
+    uint8_t trigger_source;
+}adc_tim_db_t;
+
+typedef struct {
+    uint8_t sample_time_config;
+    uint32_t max_frequency;
+    uint32_t max_impedance;
+}adc_sampletime_db_t;
+
+extern const adc_pin_db_t adc_pin_db[ADC_PIN_DB_SIZE];
+extern const adc_dma_db_t adc_dma_db[ADC_DMA_DB_SIZE];
+extern const adc_tim_db_t adc_tim_db[ADC_TIM_DB_SIZE];
+extern const adc_sampletime_db_t adc_sampletime_db[ADC_SAMPLETIME_DB_SIZE];
 
 #ifdef __cplusplus
     }
