@@ -43,6 +43,8 @@ void* app_malloc(uint16_t size){
         return result;
     }
     else {
+        /* Force breakpoint, since this shouldn't happen */
+        asm("BKPT #0");
         return (void*)0;
     }
 }

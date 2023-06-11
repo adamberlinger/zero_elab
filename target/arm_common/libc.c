@@ -29,70 +29,46 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-SECTIONS
-{
-    .nvic_vector_core :
-    {
-        *(.nvic_vector_core)   /* Vector table */
-        *(.nvic_vector_core.*)   /* Vector table */
-    } >rom
 
-    .nvic_vector_device :
-    {
-        *(.nvic_vector_device)   /* Vector table */
-        *(.nvic_vector_device.*)   /* Vector table */
-    } >rom
+#include <stddef.h>
+#include <stdint.h>
 
-    .text :
-    {
-        *(.text)      /* Program code */
-        *(.text.*)
-        *(.rodata)    /* Read only data */
-        *(.rodata.*)
-        *(.glue_7)         /* glue arm to thumb code */
-        *(.glue_7t)        /* glue thumb to arm code */
-    	*(.eh_frame)
-        *(.ARM.extab* .gnu.linkonce.armextab.*)
-    } >rom
+/*
+    Simple implementation of basic library functions
+    Using standard C library from compiler requires additiona RAM
+    and only few functions are used.
 
-     .ARM : {
-       *(.ARM.exidx*)
-       . = ALIGN(4);
-     } >rom
+    This saves around 1KB compared to GCC library (without OPTS+=--specs=nano.specs).
+    For STM32C0 with 6KB SRAM this is crucial.
 
-    _DATAI_BEGIN = LOADADDR(.data);
-    .data :
-    {
-        . = ALIGN(4);
-        _DATA_BEGIN = .;
-        *(.data)      /* Data memory */
-        *(.data.*)
-        _DATA_END = .;
-    } >ram AT >rom
+    OPTS+=--specs=nano.specs seems to require additional system
+    functions _sbrk etc.
+*/
 
-    .bss :
-    {
-        _BSS_BEGIN = .;
-        *(.bss)       /* Zero-filled run time allocate data memory */
-        *(COMMON)
-        _BSS_END = .;
-    } >ram
+uint32_t last_rand = 0x13121312;
 
-    .heap :
-    {
-        _HEAP_START = .;
-        . += HEAP_SIZE;
-        _HEAP_END = .;
-    } >ram
-
-    .stack :
-    {
-        . += STACK_SIZE;
-        _STACKTOP = .;
-    } >ram
-
-    /DISCARD/ :
-    {
-        *libg.a(*)
+void *memset( void *_dest, int ch, size_t count ){
+    uint8_t* dest = _dest;
+    while(count > 0){
+        count--;
+        dest[count] = ch;
     }
+    return dest;
+}
+
+void srand( unsigned seed ){
+    last_rand = seed;
+}
+
+int rand(void){
+    last_rand = last_rand * 1103515245 + 12345;
+    return (unsigned int)(last_rand >> 16) & 0xFFFF;
+}
+
+size_t strlen(const char* str){
+    size_t result = 0;
+    while(str[result] == 0){
+        result++;
+    }
+    return result;
 }
