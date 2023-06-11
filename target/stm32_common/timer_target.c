@@ -189,18 +189,24 @@ int timer_target_init(timer_handle_t* timer_handle, int timer_id, const timer_in
         }
 
         if(init_data->usage == TIMER_USAGE_PWM_GENERATOR){
-            timer_handle->circular_buffer = (circular_buffer_t*)module_malloc(sizeof(circular_buffer_t));
-            buffer_init(timer_handle->circular_buffer);
-            timer_handle->circular_buffer->control_arg = timer_handle;
-            timer_handle->circular_buffer->stop_callback = (buffer_stop_callback_t)timer_stop;
-            timer_handle->circular_buffer->start_callback = (buffer_start_callback_t)timer_target_start_continuous;
-            timer_handle->circular_buffer->deinit_callback = (buffer_deinit_callback_t)timer_deinit;
+            if(init_data->buffer_size > 0){
+                timer_handle->circular_buffer = (circular_buffer_t*)module_malloc(sizeof(circular_buffer_t));
+                buffer_init(timer_handle->circular_buffer);
+                timer_handle->circular_buffer->control_arg = timer_handle;
+                timer_handle->circular_buffer->stop_callback = (buffer_stop_callback_t)timer_stop;
+                timer_handle->circular_buffer->start_callback = (buffer_start_callback_t)timer_target_start_continuous;
+                timer_handle->circular_buffer->deinit_callback = (buffer_deinit_callback_t)timer_deinit;
 
-            timer_handle->regs->DIER = TIM_DIER_UDE;
-            timer_handle->dma = timer_target_find_dma(timer_id);
+                timer_handle->regs->DIER = TIM_DIER_UDE;
+                timer_handle->dma = timer_target_find_dma(timer_id);
 
-            if(timer_handle->dma){
-                buffer_alloc(timer_handle->circular_buffer, init_data->buffer_size);
+                if(timer_handle->dma){
+                    buffer_alloc(timer_handle->circular_buffer, init_data->buffer_size);
+                }
+            }
+            else{
+                timer_handle->regs->DIER = TIM_DIER_UDE;
+                timer_handle->dma = timer_target_find_dma(timer_id);
             }
         }
     }
@@ -640,4 +646,12 @@ int timer_target_get_counter_value(timer_handle_t* timer_handle, uint32_t *value
 int timer_target_stop(timer_handle_t* timer_handle){
     timer_handle->regs->CR1 &= ~TIM_CR1_CEN;
     return 0;
+}
+
+void timer_target_set_repetitioncounter(timer_handle_t* timer_handle, uint8_t value){
+    timer_handle->regs->RCR = value;
+}
+
+uint8_t timer_target_get_repetitioncounter(timer_handle_t* timer_handle){
+    return (uint8_t)timer_handle->regs->RCR;
 }

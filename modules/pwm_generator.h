@@ -30,76 +30,37 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * \file generator.h
- * \brief Module for generating analog signals
+ * \file pwm_generator.h
+ * \brief Module for generating analog signals through PWM modulation
  *
  * Generator is advanced module used for generating signals.
  * It uses DDS (direct digital synthesis) to generate samples.
  * It allows generation of different signal shapes.
- *
- * Module uses circular_buffer_t API. This enables interfacing
- * the module with different peripherals.
- * E.g. output can be connected to internal DAC, or -- if DAC is not present --
- * it can be connected to timer and generate signal through PDM modulation.
+ * External RC circuit must be connected to produce analog voltage.
  *
  * Module can be also used as an DC voltage source (constant signal).
  */
-#ifndef _GENERATOR_H_
-#define _GENERATOR_H_
+#ifndef _PWM_GENERATOR_H_
+#define _PWM_GENERATOR_H_
 
 #include "circular_buffer.h"
 #include "generator_utils.h"
 
-#ifdef DAC_PERIPH_ENABLED
+#include "timer.h"
 
-#include "dac.h"
-
-#define GEN_DECLARE(name,sample_rate,channel,buffer_size) \
-    const static dac_init_t name ## _dac_init_data = { \
-        sample_rate, \
-        channel, \
-        buffer_size, \
-    }; \
-    static ModuleGenerator* name ## _module; \
-    static PeriphDefaultDAC* name ## _dac_handle = NULL
-
-#define GEN_MODULE_INIT(name,dac_id) do {\
-        name ## _dac_handle = new PeriphDefaultDAC(1, &name ## _dac_init_data); \
-        name ## _module = new ModuleGenerator(5, name ## _dac_handle->getCircularBuffer(), \
-            name ## _dac_init_data.sample_rate,SAMPLE_TABLE_SIZE,12); \
-    }while(0)
-
-#endif /* DAC_PERIPH_ENABLED */
-
-class ModuleGenerator : public Module {
+class ModulePWMGenerator : public Module {
 protected:
-    /** \brief Circular buffer for outputing the samples
-     *
-     * This is where all the samples are stored.
-     * It is interface between generator (as a sample-generating algorithm)
-     * and e.g. ADC (sink of data).
-     */
-    circular_buffer_t* circular_buffer;
-    /** \brief Pattern table used by the DDS algorithm */
-    uint16_t* pattern_table;
+    /** \brief Timer handle generating PWM */
+    timer_handle_t* timer_handle;
 
-    /** \brief Accumulated phase used by DDS algorithm */
-    uint32_t accum_phase;
-    /**
-     * \brief Ammount which is added to phase in each step
-     *
-     * This value is proportional to output frequency
-     */
-    uint32_t phase_addend;
+    /** \brief PWM frequency */
+    uint32_t pwm_frequency;
+
     /** \brief Sample rate of the output stream */
     uint32_t sample_rate;
     /** \brief Size of pattern_table in samples */
     uint16_t pattern_size;
-    /**
-     * \brief Number of bits, which needs to be shifted from 32-bit index
-     * to address the pattern_table
-     */
-    uint16_t pattern_size_shift;
+
     /** \brief Channel used for communication with PC application */
     int channel;
 
@@ -126,35 +87,9 @@ protected:
     void setOffset(uint16_t offset);
     void computeTable();
 public:
-    ModuleGenerator(int channel, circular_buffer_t* circular_buffer,
-        uint32_t sample_rate,uint32_t table_size,uint8_t bits);
+    ModulePWMGenerator(int channel, timer_handle_t* timer_handle,
+        uint32_t sample_rate);
     virtual void command(comm_t* comm, const command_t* command);
-
-    template <typename T, int data_shift>
-    void process(uint8_t *_data,uint32_t _size){
-        T* data = (T*)_data;
-        uint32_t size = (_size >> data_shift);
-
-        uint32_t i,index;
-        /* TODO: fill table only once */
-        if(this->forced_value_valid){
-            for(i = 0; i < size;++i){
-                data[i] = (T)this->forced_value;
-            }
-        }
-        else if(this->shape == SHAPE_NOISE){
-            for(i = 0; i < size;++i){
-                data[i] = (T)(rand()) >> this->table_bit_shift;
-            }
-        }
-        else {
-            for(i = 0; i < size;++i){
-                this->accum_phase += this->phase_addend;
-                index = (this->accum_phase >> this->pattern_size_shift);
-                data[i] = (T)this->pattern_table[index];
-            }
-        }
-    }
 };
 
-#endif /* _GENERATOR_H_ */
+#endif /* _PWM_GENERATOR_H_ */

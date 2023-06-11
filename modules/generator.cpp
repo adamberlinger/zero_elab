@@ -34,28 +34,6 @@
 
 #include "generator_sin_table.h"
 
-#if 0
-
-/* Following code inserts callback functions for each bit depth */
-#define GEN_CALLBACK_NAME   gen_callback_sample_8bit
-#define gen_data_t          uint8_t
-#define GEN_DATA_SHIFT      (0)
-
-#include "generator_callbacks.h"
-
-/* Suppress compiler warnings */
-#undef GEN_CALLBACK_NAME
-#undef gen_data_t
-#undef GEN_DATA_SHIFT
-
-#define GEN_CALLBACK_NAME   gen_callback_sample_16bit
-#define gen_data_t          uint16_t
-#define GEN_DATA_SHIFT      (1)
-
-#include "generator_callbacks.h"
-
-#endif
-
 static int is_pow2(uint32_t x){
     return (x > 0) && !(x & (x-1));
 }
@@ -176,7 +154,7 @@ void ModuleGenerator::setOffset(uint16_t offset){
     this->computeTable();
 }
 
-void ModuleGenerator::setShape(Shape shape){
+void ModuleGenerator::setShape(GeneratorShape shape){
     this->shape = shape;
     this->computeTable();
 }
@@ -195,7 +173,7 @@ void ModuleGenerator::command(comm_t* comm,const command_t* command){
         }
     }
     else if(command->command_id == 'P'){
-        this->setShape((Shape)command->value);
+        this->setShape((GeneratorShape)command->value);
     }
     else if(command->command_id == 'F'){
         uint32_t frequency = convert_samplerate(command->value);

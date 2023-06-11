@@ -79,6 +79,9 @@ void timer_target_configure_slave_gated_mode(timer_handle_t* timer_handle,
     uint8_t itr);
 void timer_target_configure_custom_dma(timer_handle_t* timer_handle, void* src_address, additional_buffer_t* buffer);
 
+void timer_target_set_repetitioncounter(timer_handle_t* timer_handle, uint8_t value);
+uint8_t timer_target_get_repetitioncounter(timer_handle_t* timer_handle);
+
 typedef struct {
     uint8_t tim_channel;
     gpio_pin_t pin;
