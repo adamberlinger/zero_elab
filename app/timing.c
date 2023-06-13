@@ -33,7 +33,7 @@
 
 void wait_ms(uint32_t ms){
     uint32_t start = get_ms_ticks();
-    while((get_ms_ticks() - start) < ms)
+    while((get_ms_ticks() - start) < (ms+1))
         continue;
 }
 

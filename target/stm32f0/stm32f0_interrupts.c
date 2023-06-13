@@ -29,7 +29,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <stdint.h>
+#include "arm_interrupts.h"
 
 #define INTERRUPT_COUNT 32
 
@@ -76,7 +76,7 @@ DEFAULT_HANDLER(cec_can_handler);
 DEFAULT_HANDLER(usb_handler);
 
 void* the_nvic_vector_device[INTERRUPT_COUNT]
-__attribute__ ((section(".nvic_vector_device")))= {
+NVIC_VENDOR_ATTRIBUTE = {
     (void*)wwdg_handler,
     (void*)pvd_handler,
     (void*)rtc_wkup_handler,

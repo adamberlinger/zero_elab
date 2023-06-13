@@ -114,21 +114,21 @@ uint32_t timer_get_frequency_divider(timer_handle_t* timer_handle);
 int timer_get_flag(timer_handle_t* timer_handle, timer_flag_t flag);
 int timer_clear_flag(timer_handle_t* timer_handle, timer_flag_t flag);
 
-inline int timer_target_init(timer_handle_t* timer_handle, int timer_id, const timer_init_t* init_data);
-inline int timer_target_deinit(timer_handle_t* timer_handle);
-inline int timer_target_start(timer_handle_t* timer_handle);
-inline int timer_target_stop(timer_handle_t* timer_handle);
-inline int timer_target_change_time(timer_handle_t* timer_handle, timer_time_type_t type, uint32_t value);
-inline int timer_target_change_duty_cycle(timer_handle_t* timer_handle, uint16_t duty_cycle);
-inline int timer_target_get_pwm_input_value(timer_handle_t* timer_handle, uint32_t* freq_out, uint32_t* duty_cycle_out);
-inline uint32_t timer_target_get_resolution(timer_handle_t* timer_handle);
+int timer_target_init(timer_handle_t* timer_handle, int timer_id, const timer_init_t* init_data);
+int timer_target_deinit(timer_handle_t* timer_handle);
+int timer_target_start(timer_handle_t* timer_handle);
+int timer_target_stop(timer_handle_t* timer_handle);
+int timer_target_change_time(timer_handle_t* timer_handle, timer_time_type_t type, uint32_t value);
+int timer_target_change_duty_cycle(timer_handle_t* timer_handle, uint16_t duty_cycle);
+int timer_target_get_pwm_input_value(timer_handle_t* timer_handle, uint32_t* freq_out, uint32_t* duty_cycle_out);
+uint32_t timer_target_get_resolution(timer_handle_t* timer_handle);
 
-inline int timer_target_get_counter_value(timer_handle_t* timer_handle, uint32_t *value_out);
+int timer_target_get_counter_value(timer_handle_t* timer_handle, uint32_t *value_out);
 
-inline int timer_target_get_flag(timer_handle_t* timer_handle, timer_flag_t flag);
-inline int timer_target_clear_flag(timer_handle_t* timer_handle, timer_flag_t flag);
-inline uint32_t timer_target_get_clocks(timer_handle_t* timer_handle);
-inline uint32_t timer_target_get_frequency_divider(timer_handle_t* timer_handle);
+int timer_target_get_flag(timer_handle_t* timer_handle, timer_flag_t flag);
+int timer_target_clear_flag(timer_handle_t* timer_handle, timer_flag_t flag);
+uint32_t timer_target_get_clocks(timer_handle_t* timer_handle);
+uint32_t timer_target_get_frequency_divider(timer_handle_t* timer_handle);
 
 #ifdef __cplusplus
     }

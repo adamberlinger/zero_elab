@@ -35,7 +35,7 @@
 
 #define MS_TO_TIMER					(get_core_clock() / 1000)
 
-static uint32_t ms_ticks;
+static volatile uint32_t ms_ticks;
 
 void init_ms_ticks(void){
 	SysTick->LOAD = MS_TO_TIMER;

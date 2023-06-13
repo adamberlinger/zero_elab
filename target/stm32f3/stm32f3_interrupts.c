@@ -29,7 +29,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <stdint.h>
+#include "arm_interrupts.h"
 
 #ifdef STM32F303x8
     #define INTERRUPT_COUNT 82
@@ -120,7 +120,7 @@ DEFAULT_HANDLER(fpu_handler);
 DEFAULT_HANDLER(spi4_handler);
 
 void* the_nvic_vector_device[INTERRUPT_COUNT]
-__attribute__ ((section(".nvic_vector_device")))= {
+NVIC_VENDOR_ATTRIBUTE = {
     (void*)wwdg_handler,
     (void*)pvd_handler,
     (void*)tamper_stamp_handler,

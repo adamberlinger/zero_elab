@@ -29,68 +29,12 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-SECTIONS
-{
-    .nvic_vector_core :
-    {
-        KEEP(*(.nvic_vector_core))   /* Vector table */
-    } >rom
+#ifndef _ARM_INTERRUPTS_H_
+#define _ARM_INTERRUPTS_H_
 
-    .nvic_vector_device :
-    {
-        KEEP(*(.nvic_vector_device))   /* Vector table */
-    } >rom
+#include <stdint.h>
 
-    .text :
-    {
-        *(.text)      /* Program code */
-        *(.text.*)
-        *(.rodata)    /* Read only data */
-        *(.rodata.*)
-        *(.glue_7)         /* glue arm to thumb code */
-        *(.glue_7t)        /* glue thumb to arm code */
-    	*(.eh_frame)
-        *(.ARM.extab* .gnu.linkonce.armextab.*)
-    } >rom
+#define NVIC_VENDOR_ATTRIBUTE   __attribute__ ((used,section(".nvic_vector_device")))
+#define NVIC_CORE_ATTRIBUTE     __attribute__ ((used,section(".nvic_vector_core")))
 
-     .ARM : {
-       *(.ARM.exidx*)
-       . = ALIGN(4);
-     } >rom
-
-    _DATAI_BEGIN = LOADADDR(.data);
-    .data :
-    {
-        . = ALIGN(4);
-        _DATA_BEGIN = .;
-        *(.data)      /* Data memory */
-        *(.data.*)
-        _DATA_END = .;
-    } >ram AT >rom
-
-    .bss :
-    {
-        _BSS_BEGIN = .;
-        *(.bss)       /* Zero-filled run time allocate data memory */
-        *(COMMON)
-        _BSS_END = .;
-    } >ram
-
-    .heap :
-    {
-        _HEAP_START = .;
-        . += HEAP_SIZE;
-        _HEAP_END = .;
-    } >ram
-
-    .stack :
-    {
-        . += STACK_SIZE;
-        _STACKTOP = .;
-    } >ram
-
-    /DISCARD/ :
-    {
-        *libg.a(*)
-    }
-}
+#endif /* _ARM_INTERRUPTS_H_ */

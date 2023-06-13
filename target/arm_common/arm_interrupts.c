@@ -29,7 +29,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <stdint.h>
+#include "arm_interrupts.h"
 
 int main(void);
 void init_c(void);
@@ -49,7 +49,7 @@ void systick_handler(void) __attribute__((weak));
 extern uint32_t* _STACKTOP;
 
 void* the_nvic_vector[16]
-__attribute__ ((section(".nvic_vector_core")))= {
+NVIC_CORE_ATTRIBUTE= {
         (void*)&_STACKTOP,
         (void*) reset_handler,
         (void*) nmi_handler,
