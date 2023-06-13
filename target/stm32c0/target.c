@@ -45,8 +45,6 @@ void enter_bootloader(){
 }
 
 int init_cpu(void){
-    int tries = 2000;
-    int status = 0;
     uint32_t tmpreg;
 
     RCC->AHBENR |= RCC_AHBENR_DMA1EN;

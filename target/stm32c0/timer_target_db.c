@@ -40,7 +40,11 @@ const timer_pin_db_t timer_pin_db[TIM_PIN_DB_SIZE] = {
     TIM_CHANNEL_ENTRY(14,1,GPIOA_BASE,7,4),
     TIM_CHANNEL_ENTRY(16,1,GPIOB_BASE,8,2),
     TIM_CHANNEL_ENTRY(16,1,GPIOB_BASE,6,2), /* Complementary */
+    TIM_CHANNEL_ENTRY(16,1,GPIOA_BASE,2,2),
+
     TIM_CHANNEL_ENTRY(17,1,GPIOB_BASE,9,2),
+    TIM_CHANNEL_ENTRY(17,1,GPIOA_BASE,7,5),
+    TIM_CHANNEL_ENTRY(17,1,GPIOB_BASE,7,2), /* Complementary */
 
 
     /* TIM1 without complementary channels (12) */

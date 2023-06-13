@@ -38,6 +38,7 @@
 #include "pwm_input.h"
 #include "voltmeter.h"
 #include "oscilloscope.h"
+#include "pwm_generator.h"
 #include "stm32_dma.h"
 
 /* TODO: set list of unused pins
@@ -74,8 +75,9 @@ comm_t *get_main_comm(void){
 }
 
 VOLTMETER_DECLARE(volt1, 12, 4);
-PWM_DECLARE(pwm1, DEFINE_PIN(GPIOA_BASE, 7));
-OSC_DECLARE(osc1, 12, 4, 2*1024);
+/* PA7 -> D11 */
+PWM_DECLARE(pwm1, DEFINE_PIN(GPIOB_BASE, 7));
+OSC_DECLARE(osc1, 12, 4, 4*1024);
 
 uint32_t vdda_value = 3300;
 
@@ -91,19 +93,39 @@ uint32_t current_config = 0;
 
 uint32_t get_target_capabilities(){
   if(current_config == 0){
-    return 0x0C;
+    return 0x2C;
   }
   else {
-    return 0x07;
+    return 0x27;
   }
 }
 
+const timer_init_t tim16_init = {
+    .usage = TIMER_USAGE_PWM_GENERATOR,
+    .time_type = TIMER_INIT_FREQUENCY,
+    .time_value = 187500,
+    .duty_cycle = 50,
+    .pin = DEFINE_PIN(GPIOB_BASE,6),
+    .buffer_size = 64*2,
+};
+
+timer_handle_t tim16_handle;
+
+static void init_generator(){
+
+    timer_init(&tim16_handle, 16,  &tim16_init);
+
+    ModulePWMGenerator* gen_module = new ModulePWMGenerator(5, &tim16_handle, 187500);
+    (void)gen_module; 
+}
+
 static void init_common(){
-    PWM_MODULE_INIT(pwm1,14);
+    PWM_MODULE_INIT(pwm1,17);
 }
 
 static void init_voltmeter_variant(){
     init_common();
+    init_generator();
 
     VOLTMETER_ADD_CHANNEL(volt1,DEFINE_PIN(GPIOA_BASE,0),0);
     VOLTMETER_ADD_CHANNEL(volt1,DEFINE_PIN(GPIOA_BASE,1),1);
@@ -113,9 +135,12 @@ static void init_voltmeter_variant(){
     VOLTMETER_MODULE_INIT(volt1, 1);
 }
 
+
 static void init_oscilloscope_variant(){
     init_common();
+    init_generator();
 
+    /* AN0 - AN3 on arduino header */
     OSC_ADD_CHANNEL(osc1,DEFINE_PIN(GPIOA_BASE,0),0);
     OSC_ADD_CHANNEL(osc1,DEFINE_PIN(GPIOA_BASE,1),1);
     OSC_ADD_CHANNEL(osc1,DEFINE_PIN(GPIOA_BASE,4),2);
