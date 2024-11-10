@@ -89,8 +89,11 @@ void ModulePWMIn::thread(comm_t* comm){
             timer_clear_flag(&this->timer_handle, TIMER_FLAG_CHANNEL_CAPTURED);
 
             if(this->is_calibrating == 0){
-                send_binary_data_header(comm,this->channel,12);
-                comm_write(comm,(char*)data,12);
+                if((get_ms_ticks() - this->prevTick) > 99){
+                    send_binary_data_header(comm,this->channel,12);
+                    comm_write(comm,(char*)data,12);
+                    this->prevTick = get_ms_ticks();
+                }
                 if(data[1] < 0x8000){
                     /* Timer running too slow */
                     timer_target_update_prescaler(&this->timer_handle, -1);
