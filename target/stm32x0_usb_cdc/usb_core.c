@@ -79,7 +79,7 @@ int usb_core_init(void){
   usb_buffer_table[2].count_rx = 0x8400; /* Nothing to transfer yet */
 
   /* Enable Start-of-frame and reset interrupts */
-  USB->CNTR |= USB_CNTR_SOFM | USB_CNTR_RESETM;
+  USB->CNTR |= USB_CNTR_SOFM | USB_CNTR_RESETM | USB_CNTR_CTRM;
 
   /* No internall pull-up on STM32F1 devices */
 #ifndef STM32F1XX
