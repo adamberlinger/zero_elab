@@ -5,4 +5,4 @@ INCLUDE_PATH+=target/arm_common
 TOOL_PREFIX=arm-none-eabi-
 
 KEIL_S=target/arm_common/keil.s
-OPTS+=-flto
+#OPTS+=-flto
