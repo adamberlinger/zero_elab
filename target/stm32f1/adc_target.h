@@ -54,7 +54,6 @@ int adc_target_find_config(gpio_pin_t pin_in, int* adc_id_out, adc_channel_t* ad
 dma_handle_t adc_target_find_dma(int adc_id);
 int adc_target_find_timer_counter(int adc_id,int* timer_id_out,
     int* counter_id_out, uint8_t* trigger_source, uint8_t* counter_itr, uint8_t* timer_itr);
-void __wait_us(int x);
 gpio_pin_t adc_target_find_pin(int adc_id,int channel);
 void adc_target_set_pin_analog(gpio_pin_t pin);
 
@@ -106,20 +105,28 @@ public:
         uint8_t counter_itr;
         /* TODO: init get clock */
 
+        /* ADC clocks should be 12MHz = 72MHz / 6 */
+
         /* TODO: load this from DB */
         if(adc_id == 1){
             this->regs = ADC1;
             //this->common_regs = ADC12_COMMON;
             RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
         }
-#if 0
         /* ADC2 disabled for now as it doesn't support DMA requests */
         else if(adc_id == 2){
             this->regs = ADC2;
             //this->common_regs = ADC12_COMMON;
             RCC->APB2ENR |= RCC_APB2ENR_ADC2EN;
+
+            /* We can run ADC2 only without DMA on F1 devices */
+            /* Only 4 channels can be used in injected sequence */
+            if(((init_data->hints & ADC_HINT_NO_DMA) == 0) ||
+                (init_data->num_channels > 4)){
+                this->setError(ERROR_NO_CONFIGURATION);
+                return;
+            }
         }
-#endif
         /* TODO: add support for ADC3 */
         else {
             this->setError(ERROR_INVALID_ID);
@@ -127,7 +134,16 @@ public:
         }
 
         this->external_clocks = 0;
-        this->dma = adc_target_find_dma(adc_id);
+        if((init_data->hints & ADC_HINT_NO_DMA) == 0){
+            this->dma = adc_target_find_dma(adc_id);
+            if(this->dma == 0){
+                this->setError(ERROR_NO_CONFIGURATION);
+                return;
+            }
+        }
+        else {
+            this->dma = 0;
+        }
 
         if(init_data->sample_rate > 0){
             if(!adc_target_find_timer_counter(adc_id,&timer_id,&counter_id,&trigger_source,&counter_itr,&timer_itr)){
@@ -136,16 +152,11 @@ public:
             }
         }
 
-        if(this->dma == 0){
-            this->setError(ERROR_NO_CONFIGURATION);
-            return;
-        }
-
         /* Wake-up ADC */
         if((this->regs->CR2 & ADC_CR2_ADON) == 0){
             this->regs->CR2 |= ADC_CR2_ADON;
 
-            __wait_us(10);
+            wait_ms(1);
         }
 
         /* Calibration */
@@ -176,11 +187,18 @@ public:
         this->configured_channels = (uint8_t*)module_malloc(init_data->num_channels);
 
         /* Configure channels */
-        this->regs->SQR1 = ((init_data->num_channels - 1) & 0xF) << 20;
-        this->regs->SQR2 = 0;
-        this->regs->SQR3 = 0;
-        this->regs->SMPR1 = 0;
-        this->regs->SMPR2 = 0;
+        if(this->dma == 0){
+            this->regs->JSQR = ((init_data->num_channels - 1) & 0x3) << 20;
+            this->regs->SMPR1 = 0;
+            this->regs->SMPR2 = 0;
+        }
+        else {
+            this->regs->SQR1 = ((init_data->num_channels - 1) & 0xF) << 20;
+            this->regs->SQR2 = 0;
+            this->regs->SQR3 = 0;
+            this->regs->SMPR1 = 0;
+            this->regs->SMPR2 = 0;
+        }
 
         /* Select sample rate */
         this->global_sample_time = (init_data->hints & ADC_HINT_FAST)?0x2:0x5;
@@ -191,7 +209,12 @@ public:
             if(pin){
                 adc_target_set_pin_analog(pin);
             }
-            this->configureRegularSequence(i,channel_info[i],this->global_sample_time);
+            if(this->dma == 0){
+                this->configureInjectedSequence(i,channel_info[i],this->global_sample_time);
+            }
+            else {
+                this->configureRegularSequence(i,channel_info[i],this->global_sample_time);
+            }
 
             this->configured_channels[i] = channel_info[i];
         }
@@ -219,20 +242,22 @@ public:
 
         buffer_init(&this->circular_buffer);
 
-        this->circular_buffer.samplerate_arg = this;
-        this->circular_buffer.samplerate_callback = (buffer_samplerate_callback_t)adc_target_set_sample_rate;
+        if(this->dma != 0){
+            this->circular_buffer.samplerate_arg = this;
+            this->circular_buffer.samplerate_callback = (buffer_samplerate_callback_t)adc_target_set_sample_rate;
 
-        /* This should be last, since the memory cannot be freed */
-        if(init_data->buffer_size > 0){
-            error = buffer_alloc(&this->circular_buffer, init_data->buffer_size);
-            if(error != ERROR_NONE){
-                this->setError(ERROR_OUT_OF_MEMORY);
-                return;
+            /* This should be last, since the memory cannot be freed */
+            if(init_data->buffer_size > 0){
+                error = buffer_alloc(&this->circular_buffer, init_data->buffer_size);
+                if(error != ERROR_NONE){
+                    this->setError(ERROR_OUT_OF_MEMORY);
+                    return;
+                }
+                this->circular_buffer.item_size = (init_data->num_channels * this->getDataBytes());
             }
-            this->circular_buffer.item_size = (init_data->num_channels * this->getDataBytes());
-        }
-        else {
-            this->circular_buffer.buffer = 0;
+            else {
+                this->circular_buffer.buffer = 0;
+            }
         }
     }
 
@@ -298,27 +323,35 @@ public:
         }
 
         /* Configure channels */
-        this->regs->SQR1 = 0;
-        this->regs->SQR2 = 0;
-        this->regs->SQR3 = 0;
+        if(this->dma == 0){
+            this->regs->JSQR = 0;
+        }
+        else{
+            this->regs->SQR1 = 0;
+            this->regs->SQR2 = 0;
+            this->regs->SQR3 = 0;
+        }
         this->regs->SMPR1 = 0;
         this->regs->SMPR2 = 0;
 
         this->active_channels = 0;
         for(i = 0;i < this->num_channels;++i){
             if(channel_mask & (1 << i)){
-                /* Single ended channels */
-                if(this->configured_channels[i] < 20){
-                    this->configureRegularSequence(this->active_channels,this->configured_channels[i],this->global_sample_time);
+                if(this->dma == 0){
+                    this->configureInjectedSequence(this->active_channels,this->configured_channels[i],this->global_sample_time);
                 }
-                /* Differential channels */
                 else {
-                    this->configureRegularSequence(this->active_channels,this->configured_channels[i]-20,this->global_sample_time);
+                    this->configureRegularSequence(this->active_channels,this->configured_channels[i],this->global_sample_time);
                 }
                 this->active_channels++;
             }
         }
-        this->regs->SQR1 |= ((this->active_channels - 1) & 0xF) << 20;
+        if(this->dma == 0){
+            this->regs->JSQR |= ((this->active_channels - 1) & 0x3) << 20;
+        }
+        else {
+            this->regs->SQR1 |= ((this->active_channels - 1) & 0xF) << 20;
+        }
 
         this->circular_buffer.item_size = (this->active_channels *  this->getDataBytes());
         updateSampleTime();
@@ -410,31 +443,45 @@ public:
         return this->active_channels;
     }
 
-    void readData(void* values){
-      int16_t* adc_value = (int16_t*)values;
-      uint32_t i;
-      dma_init_t dma_init_structure;
-      dma_init_structure.memory_address = values;
-      dma_init_structure.periph_address = (void *)&this->regs->DR;
-      dma_init_structure.data_size = this->getChannels();
-      dma_init_structure.bytes = this->getDataBytes();
-      dma_init_structure.direction = DMA_TO_MEMORY;
-      dma_init(this->dma,&dma_init_structure);
+    void readData(volatile void* values){
+      volatile int16_t* adc_value = (volatile int16_t*)values;
+      if(this->dma == 0){
+        if((this->regs->CR2 & ADC_CR2_ADON) == 0){
+            this->regs->CR2 |= ADC_CR2_ADON;
+            while((this->regs->CR2 & ADC_CR2_ADON) == 0) continue;
+        }
 
-      dma_start(this->dma,0);
-      if((this->regs->CR2 & ADC_CR2_ADON) == 0){
-          this->regs->CR2 |= ADC_CR2_ADON;
-          while((this->regs->CR2 & ADC_CR2_ADON) == 0) continue;
+        this->regs->CR2 |= ADC_CR2_JSWSTART;
+
+        /* Wait for conversion complete */
+        while((this->regs->SR & ADC_SR_JEOC) == 0);
+        this->regs->SR = ~ADC_SR_JEOC;
+
+        volatile uint32_t* ptr = &this->regs->JDR1;
+        for(int i = 0;i < this->active_channels;++i){
+            adc_value[i] = *ptr;
+            ptr++;
+        }
       }
+      else {
+        dma_init_t dma_init_structure;
+        dma_init_structure.memory_address = values;
+        dma_init_structure.periph_address = (void *)&this->regs->DR;
+        dma_init_structure.data_size = this->getChannels();
+        dma_init_structure.bytes = this->getDataBytes();
+        dma_init_structure.direction = DMA_TO_MEMORY;
+        dma_init(this->dma,&dma_init_structure);
 
-      this->regs->CR2 |= ADC_CR2_SWSTART;
+        dma_start(this->dma,0);
+        if((this->regs->CR2 & ADC_CR2_ADON) == 0){
+            this->regs->CR2 |= ADC_CR2_ADON;
+            while((this->regs->CR2 & ADC_CR2_ADON) == 0) continue;
+        }
 
-      dma_wait_for_complete(this->dma);
+        this->regs->CR2 |= ADC_CR2_SWSTART;
 
-      for(i = 0;i < this->num_channels;++i){
-          if(this->configured_channels[i] > 20){
-              adc_value[i] <<= 1;
-          }
+        dma_wait_for_complete(this->dma);
+        __sync_synchronize();
       }
     }
 
@@ -468,6 +515,24 @@ public:
         }
     }
 
+    void configureInjectedSequence(int i,
+        adc_channel_t channel,uint8_t sample_time){
+        
+        /* Force long sample time for VREFINT */
+        if(channel == 17 && this->sample_rate == 0){
+          sample_time = 0x7;
+        }
+
+        this->regs->JSQR |= ((channel << (i*5)));
+
+        if(channel <= 9){
+            this->regs->SMPR2 |= ((sample_time & 0x7) << (channel * 3));
+        }
+        else {
+            this->regs->SMPR1 |= ((sample_time & 0x7) << ((channel-10) * 3));
+        }
+    }
+
     int getDataBytes(){
         return 2;
     }
@@ -475,8 +540,14 @@ public:
     void initTrigger(int trigger_source){
       uint32_t cr2 = this->regs->CR2;
       /* Enable external trigger (rising edge) */
-      cr2 |= (0x1) << 20;
-      cr2 |= (trigger_source) << 17;
+      if(this->dma == 0){
+        cr2 |= (0x1) << 15;
+        cr2 |= (trigger_source) << 12;
+      }
+      else {
+        cr2 |= (0x1) << 20;
+        cr2 |= (trigger_source) << 17;
+      }
       this->regs->CR2 = cr2;
     }
 };

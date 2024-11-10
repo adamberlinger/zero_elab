@@ -88,10 +88,3 @@ void adc_target_set_pin_analog(gpio_pin_t pin){
     stm32_gpio_init(pin,MODE_AN);
 }
 
-
-void __wait_us(int x){
-    /* TODO: rewrie to use systick */
-    int i = 0;
-    x = x * (get_core_clock() / 1000000);
-    while(i < x) i++;
-}

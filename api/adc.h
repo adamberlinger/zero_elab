@@ -84,6 +84,7 @@ inline bool operator&(adc_init_hint_t a, adc_init_hint_t b){
 constexpr uint32_t ADC_HINT_NONE = 0x00;
 constexpr uint32_t ADC_HINT_FAST = 0x01;
 constexpr uint32_t ADC_HINT_REVERSE_SCAN = 0x02;
+constexpr uint32_t ADC_HINT_NO_DMA = 0x04;
 typedef uint32_t adc_init_hint_t;
 
 
