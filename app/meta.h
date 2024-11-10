@@ -41,7 +41,7 @@
 #define FIRMWARE_VERSION    (0x0100)
 
 extern const char* target_name;
-extern const uint32_t target_name_length;
+extern uint32_t target_name_length;
 extern const char* target_configuration_name;
 
 #ifdef __cplusplus
