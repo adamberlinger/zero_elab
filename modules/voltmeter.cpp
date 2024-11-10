@@ -54,6 +54,7 @@ ModuleVoltmeter::ModuleVoltmeter(int channel, int adc_id,
     this->state = IDLE;
     this->prevTick = get_ms_ticks();
     this->scale = 1;
+    this->fixedVDDA = 0;
 
     vrefint_real_index = init_data->num_channels-1;
 }
@@ -88,6 +89,7 @@ void ModuleVoltmeter::command(comm_t* comm, const command_t* command){
 }
 
 void ModuleVoltmeter::dataShuffle(){
+    if(this->fixedVDDA != 0) return;
     /* Re-shuffle for devices where VREFINT is not last channel */
     if(vrefint_real_index != this->num_channels-1){
         int16_t tmp = this->read_buffer[vrefint_real_index];
@@ -107,22 +109,30 @@ void ModuleVoltmeter::thread(comm_t* comm){
 
             this->dataShuffle();
 
-            /* TODO: specify reference channel */
-            for(i = 0;i < this->num_channels-1;++i){
-                int32_t value = this->read_buffer[i];
-                value *= this->scale;
-                value *= VREFINT_CAL;
-                value /= this->read_buffer[this->num_channels-1];
+            if(this->fixedVDDA == 0){
+                for(i = 0;i < this->num_channels-1;++i){
+                    int32_t value = this->read_buffer[i];
+                    value *= this->scale;
+                    value *= VREFINT_CAL;
+                    value /= this->read_buffer[this->num_channels-1];
 #if VREFINT_CAL_MV != 3300
-                /* TODO: report VREFINT_CAL_MV to PC application and do adjustments there */
-                value *= VREFINT_CAL_MV;
-                value /= 3300;
+                    /* TODO: report VREFINT_CAL_MV to PC application and do adjustments there */
+                    value *= VREFINT_CAL_MV;
+                    value /= 3300;
 #endif
-                this->accum_registers[i] += value;
+                    this->accum_registers[i] += value;
+                }
+                this->accum_registers[this->num_channels-1] +=
+                    (int32_t)((VREFINT_CAL_MV * VREFINT_CAL) / this->read_buffer[this->num_channels-1]);
             }
-
-            this->accum_registers[this->num_channels-1] +=
-                (int32_t)((VREFINT_CAL_MV * VREFINT_CAL) / this->read_buffer[this->num_channels-1]);
+            else {
+                for(i = 0;i < this->num_channels;++i){
+                    int32_t value = this->read_buffer[i] * this->fixedVDDA;
+                    value *= this->scale;
+                    value /= 4096;
+                    this->accum_registers[i] += value;
+                }
+            }
 
             this->accum_count++;
             if(this->accum_count >= this->avg_samples){
@@ -140,10 +150,15 @@ void ModuleVoltmeter::thread(comm_t* comm){
 
     if(this->state == TRANSFER){
         int i;
-        send_binary_data_header(comm,this->channel,4 * this->num_channels + 2);
+        send_binary_data_header(comm,this->channel,4 * this->num_channels
+            + ((this->fixedVDDA == 0)?2:6));
         comm_write(comm,(char*)&this->accum_count,2);
         for(i = 0;i < this->num_channels;++i){
             comm_write(comm,(char*)&this->accum_registers[i],4);
+        }
+        if(this->fixedVDDA != 0){
+            uint32_t dummy_vdda = this->fixedVDDA * this->accum_count;
+            comm_write(comm,(char*)&dummy_vdda,4);
         }
         this->state = SAMPLING;
         this->accum_count = 0;

@@ -90,6 +90,7 @@ protected:
     State state;
     uint32_t prevTick;    
     int vrefint_real_index;
+    uint32_t fixedVDDA;
 
     void dataShuffle();
 public:
@@ -99,6 +100,7 @@ public:
     virtual void thread(comm_t* comm);
     uint32_t getVDDA();
     void setVREFIndex(int val){vrefint_real_index = val;}
+    void setFixedVDDA(uint32_t mv){fixedVDDA = mv;}
     virtual ~ModuleVoltmeter();
 };
 
