@@ -78,6 +78,7 @@ SECTIONS
 
     .heap :
     {
+        . = ALIGN(4);
         _HEAP_START = .;
         . += HEAP_SIZE;
         _HEAP_END = .;
@@ -86,6 +87,7 @@ SECTIONS
     .stack :
     {
         . += STACK_SIZE;
+        . = ALIGN(8);
         _STACKTOP = .;
     } >ram
 
