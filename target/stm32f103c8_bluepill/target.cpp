@@ -55,6 +55,7 @@ const gpio_pin_t gpio_unused_pin_range[1] = {0};
 #endif
 
 VOLTMETER_DECLARE(volt1, 12, 4);
+VOLTMETER_DECLARE_HINT(volt2, 12, 3, VOLTMETER_DEFAULT_HINT | ADC_HINT_NO_DMA);
 PWM_DECLARE(pwm1, DEFINE_PIN(GPIOB_BASE, 6));
 OSC_DECLARE(osc1, 12, 4, 10*1024);
 PWM_IN_DECLARE(pwm_in1, DEFINE_PIN(GPIOA_BASE,8));
@@ -81,7 +82,8 @@ uint32_t get_target_capabilities(){
     return 0x1C;
   }
   else {
-    return 0x17;
+    //return 0x17;
+    return 0x1F;
   }
 }
 
@@ -112,7 +114,16 @@ static void init_oscilloscope_variant(){
     OSC_MODULE_PREPARE(osc1,1);
 
     OSC_MODULE_INIT(osc1);
-    OSC_MODULE_LIMIT_FREQUENCY(osc1,200000);
+    /* 12MHz / 17 ~ 700kHz max. fs */
+    OSC_MODULE_LIMIT_FREQUENCY(osc1,700000);
+
+    VOLTMETER_ADD_CHANNEL(volt2,DEFINE_PIN(GPIOA_BASE,4),0);
+    VOLTMETER_ADD_CHANNEL(volt2,DEFINE_PIN(GPIOA_BASE,5),1);
+    VOLTMETER_ADD_CHANNEL(volt2,DEFINE_PIN(GPIOA_BASE,6),2);
+
+    VOLTMETER_MODULE_INIT(volt2, 1);
+
+    volt2_module->setFixedVDDA(vdda_value);
 }
 
 void set_next_device_configuration(){
@@ -138,4 +149,9 @@ void functions_init(void){
     init_voltmeter_variant();
 
     vdda_value = volt1_module->getVDDA();
+
+    wait_ms(1);
+
+    vdda_value = volt1_module->getVDDA();
+    if(vdda_value == 0) vdda_value = 3000;
 }
