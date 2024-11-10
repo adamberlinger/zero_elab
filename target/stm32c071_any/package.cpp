@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  * 
- * Copyright (c) 2016-2022, Adam Berlinger
+ * Copyright (c) 2024, Adam Berlinger
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -29,59 +29,29 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _TIMER_TARGET_DB_H_
-#define _TIMER_TARGET_DB_H_
 
-#include <stdint.h>
-#include "stm32_common.h"
-#include "stm32_dma.h"
-#include "timer.h"
+#include "package.h"
 
-#ifdef __cplusplus
-    extern "C" {
-#endif
+const c0_package_config_t pkg_config[C0_PKG_COUNT] = {
+    C0_PKG_DEFINE(TSSOP20_GP),
+    C0_PKG_DEFINE(TSSOP20_N),
+    C0_PKG_DEFINE(LQFP32_GP),
+    C0_PKG_DEFINE(LQFP32_N),
+    C0_PKG_DEFINE_WITH_NAME(LQFP64_GP, "stm32c071rb_nucleo"),
+    C0_PKG_DEFINE_WITH_NAME(LQFP64_N, "stm32c071rb_nucleo (N suffix)"),
+};
 
-#define TIM1_PIN_SIZE          4
-#define TIM3_PIN_SIZE          4
-#ifdef STM32C071xx
-#define TIM2_PIN_SIZE          1
-#else
-#define TIM2_PIN_SIZE          0
-#endif
+int pkg_index = 0;
 
-#define TIM14_PIN_SIZE         2
-#define TIM16_PIN_SIZE         3
-#define TIM17_PIN_SIZE         4
-
-#define TIM_PIN_DB_SIZE    (TIM1_PIN_SIZE + TIM3_PIN_SIZE + \
-        TIM14_PIN_SIZE + TIM16_PIN_SIZE + \
-        TIM17_PIN_SIZE + TIM2_PIN_SIZE)
-
-#ifdef STM32C071xx
-#define TIM_CONFIG_DB_SIZE (6)
-#else
-#define TIM_CONFIG_DB_SIZE (5)
-#endif
-
-
-#ifdef STM32C071xx
-#define TIM_DMA_DB_SIZE (5)
-#else
-#define TIM_DMA_DB_SIZE (4)
-#endif
-
-#define TIM_SLAVE_DB_SIZE (2)
-
-#define TIM_ETR_DB_SIZE     (0)
-
-extern const timer_pin_db_t timer_pin_db[TIM_PIN_DB_SIZE];
-extern const timer_config_db_t timer_config_db[TIM_CONFIG_DB_SIZE];
-extern const timer_slave_db_t timer_slave_db[TIM_SLAVE_DB_SIZE];
-extern const timer_dma_db_t timer_dma_db[TIM_DMA_DB_SIZE];
-extern const timer_pin_db_t timer_etr_db[TIM_ETR_DB_SIZE];
-
-#ifdef __cplusplus
+void c0_package_init(void){
+    /* Identify package */
+    uint8_t pkg = (*(uint16_t*)(0x1FFF7500)) & 0xF;
+    for(int i = 0; i < C0_PKG_COUNT;++i){
+        if(pkg == pkg_config[i].pkg_id){
+            pkg_index = i;
+            break;
+        }
     }
-#endif
-
-#endif
+    target_name = pkg_config[pkg_index].target_name;
+    target_name_length = pkg_config[pkg_index].target_name_length;
+}

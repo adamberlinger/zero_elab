@@ -49,6 +49,7 @@ DEFAULT_HANDLER(rcc_crs_handler);
 DEFAULT_HANDLER(exti0_1_handler);
 DEFAULT_HANDLER(exit2_3_handler);
 DEFAULT_HANDLER(exit4_15_handler);
+DEFAULT_HANDLER(usb_handler);
 
 DEFAULT_HANDLER(dma1_channel1_handler);
 DEFAULT_HANDLER(dma1_channel2_3_handler);
@@ -75,7 +76,7 @@ NVIC_VENDOR_ATTRIBUTE = {
     (void*)exti0_1_handler,
     (void*)exit2_3_handler,
     (void*)exit4_15_handler,
-    (void*)0, /* reserved */
+    (void*)usb_handler,
 
     (void*)dma1_channel1_handler,
     (void*)dma1_channel2_3_handler,

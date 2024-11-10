@@ -35,10 +35,16 @@ int usb_clk_init(void){
 #ifdef STM32F1XX
   RCC->APB1ENR |= RCC_APB1ENR_USBEN;
 #else
+
+#ifdef STM32C0XX
+  RCC->APBENR2 |= RCC_APBENR2_SYSCFGEN;
+  RCC->APBENR1 |= RCC_APBENR1_CRSEN | RCC_APBENR1_USBEN;
+#else
   RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
   RCC->APB1ENR |= RCC_APB1ENR_CRSEN | RCC_APB1ENR_USBEN;
+#endif
 
-#ifndef STM32F0
+#ifdef STM32L0XX
   if(!(SYSCFG->CFGR3 & (0x1 << 26))){
     uint32_t tries = 0x2000000;
     SYSCFG->CFGR3 |= SYSCFG_CFGR3_ENREF_HSI48 | 0x1;
@@ -62,6 +68,19 @@ int usb_clk_init(void){
       }
     }
   }
+#elif defined(STM32C0XX)
+  if(!(RCC->CR & RCC_CR_HSIUSB48RDY)){
+    uint32_t tries = 0x2000000;
+    RCC->CR |= RCC_CR_HSIUSB48ON;
+    while(!(RCC->CR & RCC_CR_HSIUSB48RDY)){
+      tries--;
+      if(tries == 0){
+        return -1;
+      }
+    }
+  }
+
+  /* HSI48 clocks used by default */
 #else
   if(!(RCC->CRRCR & RCC_CRRCR_HSI48RDY)){
     uint32_t tries = 0x2000000;
@@ -77,7 +96,7 @@ int usb_clk_init(void){
   RCC->CCIPR |= RCC_CCIPR_HSI48SEL;
 #endif
 
-  CRS->CR |= CRS_CR_AUTOTRIMEN;
+  CRS->CR |= CRS_CR_AUTOTRIMEN | CRS_CR_CEN;
 #endif /* ifdef STM32F1XX */
   return 0;
 }
@@ -98,6 +117,8 @@ void usb_nvic_init(void){
 #ifdef STM32F1XX
   NVIC_EnableIRQ(USB_HP_CAN1_TX_IRQn);
   NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
+#elif defined(STM32C0XX)
+  NVIC_EnableIRQ(USB_DRD_FS_IRQn);
 #else
   NVIC_EnableIRQ(USB_IRQn);
 #endif

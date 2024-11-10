@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  * 
- * Copyright (c) 2016-2022, Adam Berlinger
+ * Copyright (c) 2024, Adam Berlinger
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -29,59 +29,36 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _TIMER_TARGET_DB_H_
-#define _TIMER_TARGET_DB_H_
+#ifndef _PACKAGE_H_
+#define _PACKAGE_H_
 
-#include <stdint.h>
-#include "stm32_common.h"
-#include "stm32_dma.h"
-#include "timer.h"
+#include "core.h"
 
-#ifdef __cplusplus
-    extern "C" {
-#endif
+typedef enum {
+    TSSOP20_GP = 0x3,
+    TSSOP20_N  = 0x4,
+    LQFP32_GP  = 0x7,
+    LQFP32_N   = 0x8,
+    LQFP64_GP  = 0xB,
+    LQFP64_N   = 0xC,
+}c0_package_t;
 
-#define TIM1_PIN_SIZE          4
-#define TIM3_PIN_SIZE          4
-#ifdef STM32C071xx
-#define TIM2_PIN_SIZE          1
-#else
-#define TIM2_PIN_SIZE          0
-#endif
+typedef struct {
+    const char* target_name;
+    uint16_t target_name_length;
+    uint8_t pkg_id;
+}c0_package_config_t;
 
-#define TIM14_PIN_SIZE         2
-#define TIM16_PIN_SIZE         3
-#define TIM17_PIN_SIZE         4
+#define C0_PKG_COUNT   (6)
+#define C0_PKG_NAME(name) "stm32c071 (" #name ")"
+#define C0_PKG_DEFINE_WITH_NAME(pkg, name) {name, sizeof(name), pkg}
+#define C0_PKG_DEFINE(pkg) C0_PKG_DEFINE_WITH_NAME(pkg,C0_PKG_NAME(pkg))
 
-#define TIM_PIN_DB_SIZE    (TIM1_PIN_SIZE + TIM3_PIN_SIZE + \
-        TIM14_PIN_SIZE + TIM16_PIN_SIZE + \
-        TIM17_PIN_SIZE + TIM2_PIN_SIZE)
+extern const c0_package_config_t pkg_config[C0_PKG_COUNT];
+extern int pkg_index;
 
-#ifdef STM32C071xx
-#define TIM_CONFIG_DB_SIZE (6)
-#else
-#define TIM_CONFIG_DB_SIZE (5)
-#endif
+void c0_package_init(void);
 
+#define C0_IS_NUCLEO (pkg_index >= 4)
 
-#ifdef STM32C071xx
-#define TIM_DMA_DB_SIZE (5)
-#else
-#define TIM_DMA_DB_SIZE (4)
-#endif
-
-#define TIM_SLAVE_DB_SIZE (2)
-
-#define TIM_ETR_DB_SIZE     (0)
-
-extern const timer_pin_db_t timer_pin_db[TIM_PIN_DB_SIZE];
-extern const timer_config_db_t timer_config_db[TIM_CONFIG_DB_SIZE];
-extern const timer_slave_db_t timer_slave_db[TIM_SLAVE_DB_SIZE];
-extern const timer_dma_db_t timer_dma_db[TIM_DMA_DB_SIZE];
-extern const timer_pin_db_t timer_etr_db[TIM_ETR_DB_SIZE];
-
-#ifdef __cplusplus
-    }
-#endif
-
-#endif
+#endif /* _PACKAGE_H_ */

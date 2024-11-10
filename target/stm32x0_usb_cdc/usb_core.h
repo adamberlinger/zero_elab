@@ -50,9 +50,15 @@
 #define USB_NUM_BUFFERS          (4)
 #define USB_NUM_TRANSMIT_BUFFERS (2)
 
-#define USB_EPx(ep) (*(((uint16_t*)&USB->EP0R) + ep*2))
+#define USB_EPx(ep) (*(((uint16_t*)&USB->EP0R) + (ep)*2))
 
-#ifdef STM32F1XX
+#ifdef USB_SRAM_32ACCESS
+typedef struct {
+    /* E.g. on C0, registers allow only 32-bit access */
+    volatile uint32_t tx_conf;
+    volatile uint32_t rx_conf;
+}buffer_table_row_t;
+#elif defined(STM32F1XX)
 typedef struct {
     volatile uint32_t addr_tx;
     volatile uint32_t count_tx;
@@ -77,6 +83,7 @@ typedef struct {
 typedef enum {
   USB_CONTROL_IDLE,
   USB_CONTROL_DATA_RX,
+  USB_CONTROL_DATA_TX,
 }usb_control_state_t;
 
 typedef struct {
@@ -114,6 +121,28 @@ void mem_copy16_tousb(const void* source, void* dest, uint16_t size);
 void mem_copy16_fromusb(const void* source, void* dest, uint16_t size);
 void mem_copy16to8(const void* source, void* dest, uint16_t size);
 void mem_copy8to16(const void* source, void* dest, uint16_t size);
+
+#ifdef USB_SRAM_32ACCESS
+#define USB_SET_ADDR_TX(x, val)  (x).tx_conf = (((x).tx_conf & 0xFFFF0000) | (val))
+#define USB_SET_ADDR_RX(x, val)  (x).rx_conf = (((x).rx_conf & 0xFFFF0000) | (val))
+#define USB_SET_COUNT_TX(x, val)  (x).tx_conf = (((x).tx_conf & 0xFFFF) | ((val) << 16))
+#define USB_SET_COUNT_RX(x, val)  (x).rx_conf = (((x).rx_conf & 0xFFFF) | ((val) << 16))
+
+#define USB_GET_ADDR_TX(x)  (uint16_t)((x).tx_conf & 0xFFFF)
+#define USB_GET_ADDR_RX(x)  (uint16_t)((x).rx_conf & 0xFFFF)
+#define USB_GET_COUNT_TX(x)  (uint16_t)(((x).tx_conf & 0xFFFF0000) >> 16)
+#define USB_GET_COUNT_RX(x)   (uint16_t)(((x).rx_conf & 0xFFFF0000) >> 16)
+#else
+#define USB_SET_ADDR_TX(x, val)  (x).addr_tx = (val)
+#define USB_SET_ADDR_RX(x, val)  (x).addr_rx = (val)
+#define USB_SET_COUNT_TX(x, val)  (x).count_tx = (val)
+#define USB_SET_COUNT_RX(x, val)  (x).count_rx = (val)
+
+#define USB_GET_ADDR_TX(x)  ((x).addr_tx)
+#define USB_GET_ADDR_RX(x)  ((x).addr_rx)
+#define USB_GET_COUNT_TX(x)  ((x).count_tx)
+#define USB_GET_COUNT_RX(x)  ((x).count_rx)
+#endif
 
 #ifdef __cplusplus
     }

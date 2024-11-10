@@ -29,6 +29,9 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#define MINILOG_ENABLED
+
 #include "usb_core.h"
 #include "usb_bsp.h"
 #include "usb_desc.h"
@@ -60,9 +63,11 @@ int usb_core_init(void){
     usb_state.transfers[i].transfered = 0;
   }
 
+#ifndef STM32C0XX
   USB->BTABLE = 0;
+#endif
 
-  /* TODO: setup table */
+#if 0
   usb_buffer_table[0].addr_tx = sizeof(buffer_table_row_t) * USB_NUM_BUFFERS;
   usb_buffer_table[0].count_tx = 0; /* Nothing to transfer yet */
   usb_buffer_table[0].addr_rx = sizeof(buffer_table_row_t) * USB_NUM_BUFFERS + 64;
@@ -77,6 +82,22 @@ int usb_core_init(void){
   usb_buffer_table[2].count_tx = 0;
   usb_buffer_table[2].addr_rx = sizeof(buffer_table_row_t) * USB_NUM_BUFFERS + 192;
   usb_buffer_table[2].count_rx = 0x8400; /* Nothing to transfer yet */
+#endif
+
+  USB_SET_ADDR_TX(usb_buffer_table[0], sizeof(buffer_table_row_t) * USB_NUM_BUFFERS);
+  USB_SET_COUNT_TX(usb_buffer_table[0], 0); /* Nothing to transfer yet */
+  USB_SET_ADDR_RX(usb_buffer_table[0], sizeof(buffer_table_row_t) * USB_NUM_BUFFERS + 64);
+  USB_SET_COUNT_RX(usb_buffer_table[0], 0x8400); /* 64-byte size */
+
+  USB_SET_ADDR_TX(usb_buffer_table[1], sizeof(buffer_table_row_t) * USB_NUM_BUFFERS + 128);
+  USB_SET_COUNT_TX(usb_buffer_table[1], 0); /* Nothing to transfer yet */
+  USB_SET_ADDR_RX(usb_buffer_table[1], 0);
+  USB_SET_COUNT_RX(usb_buffer_table[1], 0);
+
+  USB_SET_ADDR_TX(usb_buffer_table[2], 0);
+  USB_SET_COUNT_TX(usb_buffer_table[2], 0);
+  USB_SET_ADDR_RX(usb_buffer_table[2], sizeof(buffer_table_row_t) * USB_NUM_BUFFERS + 192);
+  USB_SET_COUNT_RX(usb_buffer_table[2], 0x8400); /* Nothing to transfer yet */
 
   /* Enable Start-of-frame and reset interrupts */
   USB->CNTR |= USB_CNTR_SOFM | USB_CNTR_RESETM | USB_CNTR_CTRM;
@@ -86,7 +107,6 @@ int usb_core_init(void){
   /* Enable internall pull-up on D+ line */
   USB->BCDR |= USB_BCDR_DPPU;
 #endif
-
   return 0;
 }
 
@@ -116,6 +136,87 @@ void usb_core_reset(){
     usb_state.transfers[i].size = 0;
   }
 }
+
+#ifdef USB_SRAM_32ACCESS
+void mem_copy16_tousb(const void* source, void* dest, uint16_t size){
+  size = (size+1) >> 1;
+  const uint16_t* s = (const uint16_t*)source;
+  uint32_t* d = (uint32_t*)dest;
+  uint16_t i = 0;
+  while(size > 1){
+    d[i] = s[2*i] | ((uint32_t)(s[2*i+1]) << 16);
+    size -= 2;
+    i++;
+  }
+  if(size > 0){
+    d[i] = s[2*i];
+  }
+}
+
+void mem_copy16_fromusb(const void* source, void* dest, uint16_t size){
+  size = (size+1) >> 1;
+  const uint32_t* s = (const uint32_t*)source;
+  uint16_t* d = (uint16_t*)dest;
+  uint16_t i = 0;
+  while(size > 1){
+    uint32_t tmp = s[i];
+    d[2*i] = tmp & 0xFFFF;
+    d[2*i+1] = (tmp >> 16) & 0xFFFF;
+    size -= 2;
+    i++;
+  }
+  if(size > 0){
+    d[2*i] = (s[i] & 0xFFFF);
+  }
+}
+
+void mem_copy16to8(const void* source, void* dest, uint16_t size){
+
+  uint32_t *s = (uint32_t*)((uint32_t)source & 0xfffffffc);
+  uint8_t *d = (uint8_t*) dest;
+  uint32_t i = 0;
+  uint32_t b = ((uint32_t)source & 0x3);
+
+  uint32_t tmp = *s;
+
+  while(i < size){
+    d[i] = (tmp >> (b*8)) & 0xFF;
+    i++;
+    b++;
+    if(b == 4){
+      s++;
+      tmp = *s;
+      b = 0;
+    }
+  }
+}
+
+void mem_copy8to16(const void* source, void* dest, uint16_t size){
+  uint32_t *d = (uint32_t*)((uint32_t)dest & 0xfffffffc);
+  uint8_t *s = (uint8_t*) source;
+  uint32_t i = 0;
+  uint32_t b = ((uint32_t)dest & 0x3);
+
+  uint32_t tmp = *d;
+
+  while(i < size){
+    tmp = (tmp & ~(uint32_t)(0xFF << (b*8))) | s[i] << (b*8);
+    i++;
+    b++;
+    if(b == 4){
+      *d = tmp;
+      d++;
+      tmp = *d;
+      b = 0;
+    }
+  }
+
+  if(b != 0){
+    *d = tmp;
+  }
+}
+
+#else
 
 void mem_copy16_tousb(const void* source, void* dest, uint16_t size){
   size = (size+1) >> 1;
@@ -176,10 +277,11 @@ void mem_copy8to16(const void* source, void* dest, uint16_t size){
     d[i >> 1] = s[i];
   }
 }
+#endif
 
 void usb_core_status0(int success){
   if(success){
-    usb_buffer_table[0].count_tx = 0;
+    USB_SET_COUNT_TX(usb_buffer_table[0], 0);
     if(USB_EPx(0) & 0x20){
       USB_EPx(0) = 0x8290;
     }
@@ -199,16 +301,17 @@ void usb_core_status0(int success){
 
 void usb_core_transmit0(const uint8_t* data,uint16_t size){
   if(size > 64){
-    mem_copy16_tousb(data, (uint16_t*)(usb_buffer_table[0].addr_tx * USB_SRAM_MULT + USB_SRAM_START_ADDRESS), 64);
-    usb_buffer_table[0].count_tx = 64;
+    mem_copy16_tousb(data, (uint16_t*)(USB_GET_ADDR_TX(usb_buffer_table[0]) * USB_SRAM_MULT + USB_SRAM_START_ADDRESS), 64);
+    USB_SET_COUNT_TX(usb_buffer_table[0], 64);
     usb_state.transfers[0].data = data + 64;
     usb_state.transfers[0].size = size - 64;
     usb_state.transfers[0].transfered = 0;
   }
   else {
-    mem_copy16_tousb(data, (uint16_t*)(usb_buffer_table[0].addr_tx * USB_SRAM_MULT + USB_SRAM_START_ADDRESS), size);
-    usb_buffer_table[0].count_tx = size;
+    mem_copy16_tousb(data, (uint16_t*)(USB_GET_ADDR_TX(usb_buffer_table[0]) * USB_SRAM_MULT + USB_SRAM_START_ADDRESS), size);
+    USB_SET_COUNT_TX(usb_buffer_table[0],size);
   }
+  usb_state.control_state = USB_CONTROL_DATA_TX;
   if(USB_EPx(0) & 0x20){
     USB_EPx(0) = 0x8290;
   }
@@ -219,15 +322,15 @@ void usb_core_transmit0(const uint8_t* data,uint16_t size){
 
 void usb_core_transmit1(const uint8_t* data,uint16_t size){
   if(size > 64){
-    mem_copy8to16(data, (uint16_t*)(usb_buffer_table[1].addr_tx * USB_SRAM_MULT + USB_SRAM_START_ADDRESS), 64);
-    usb_buffer_table[1].count_tx = 64;
+    mem_copy8to16(data, (uint16_t*)(USB_GET_ADDR_TX(usb_buffer_table[1]) * USB_SRAM_MULT + USB_SRAM_START_ADDRESS), 64);
+    USB_SET_COUNT_TX(usb_buffer_table[1], 64);
     usb_state.transfers[1].data = data + 64;
     usb_state.transfers[1].size = size - 64;
     usb_state.transfers[1].transfered = 0;
   }
   else {
-    mem_copy8to16(data, (uint16_t*)(usb_buffer_table[1].addr_tx * USB_SRAM_MULT + USB_SRAM_START_ADDRESS), size);
-    usb_buffer_table[1].count_tx = size;
+    mem_copy8to16(data, (uint16_t*)(USB_GET_ADDR_TX(usb_buffer_table[1]) * USB_SRAM_MULT + USB_SRAM_START_ADDRESS), size);
+    USB_SET_COUNT_TX(usb_buffer_table[1], size);
     usb_state.transfers[1].size = 0;
     if(size == 64){
       usb_state.transfers[1].transfered = 2;
@@ -302,16 +405,16 @@ void usb_core_ep_tx(uint32_t ep){
   if(usb_state.transfers[ep].size > 0){
     if(usb_state.transfers[ep].size > 64){
       mem_copy8to16(usb_state.transfers[ep].data,
-           (uint16_t*)(usb_buffer_table[ep].addr_tx * USB_SRAM_MULT + USB_SRAM_START_ADDRESS), 64);
-      usb_buffer_table[ep].count_tx = 64;
+           (uint16_t*)(USB_GET_ADDR_TX(usb_buffer_table[ep]) * USB_SRAM_MULT + USB_SRAM_START_ADDRESS), 64);
+      USB_SET_COUNT_TX(usb_buffer_table[ep], 64);
       usb_state.transfers[ep].data += 64;
       usb_state.transfers[ep].transfered += 64;
       usb_state.transfers[ep].size -= 64;
     }
     else {
       mem_copy8to16(usb_state.transfers[ep].data,
-           (uint16_t*)(usb_buffer_table[ep].addr_tx * USB_SRAM_MULT + USB_SRAM_START_ADDRESS), usb_state.transfers[ep].size);
-      usb_buffer_table[ep].count_tx = usb_state.transfers[ep].size;
+           (uint16_t*)(USB_GET_ADDR_TX(usb_buffer_table[ep]) * USB_SRAM_MULT + USB_SRAM_START_ADDRESS), usb_state.transfers[ep].size);
+      USB_SET_COUNT_TX(usb_buffer_table[ep], usb_state.transfers[ep].size);
       if(usb_state.transfers[ep].size == 64 && ep == 1){
         usb_state.transfers[ep].transfered = 2;
       }
@@ -340,7 +443,7 @@ void usb_core_ep_tx(uint32_t ep){
   else {
     /* Send zero-length packet */
     if(usb_state.transfers[ep].transfered == 2 && ep == 1){
-      usb_buffer_table[ep].count_tx = 0;
+      USB_SET_COUNT_TX(usb_buffer_table[ep], 0);
       if(USB_EPx(1) & 0x20){
         USB_EPx(1) = 0x8091;
       }
@@ -351,21 +454,25 @@ void usb_core_ep_tx(uint32_t ep){
     }
     else {
       usb_state.transfers[ep].transfered = 0;
+      if(usb_state.control_state == USB_CONTROL_DATA_TX){
+        usb_state.control_state = USB_CONTROL_IDLE;
+        /* Re-enable reception */
+        USB_EPx(0) = 0x9280;
+      }
     }
   }
 }
 
 void usb_core_ep_rx(uint32_t ep){
-  uint16_t rx_size = usb_buffer_table[ep].count_rx & 0x03FF;
+  uint16_t rx_size = USB_GET_COUNT_RX(usb_buffer_table[ep]) & 0x03FF;
   if(ep == 0){
     /* Clear RX flag */
     USB_EPx(0) = 0x0280;
 
     if(USB->EP0R & USB_EP_SETUP){
-      //const usb_request_t* rq = (const usb_request_t*)(usb_buffer_table[0].addr_rx + USB_SRAM_START_ADDRESS);
-      mem_copy16_fromusb((void*)(usb_buffer_table[0].addr_rx * USB_SRAM_MULT + USB_SRAM_START_ADDRESS),&tmp_request,8);
+      mem_copy16_fromusb((void*)(USB_GET_ADDR_RX(usb_buffer_table[0]) * USB_SRAM_MULT + USB_SRAM_START_ADDRESS),&tmp_request,8);
       if((tmp_request.request_type & 0x80) == 0x00 && tmp_request.length > 0){
-        mem_copy16_fromusb((void*)(usb_buffer_table[0].addr_rx * USB_SRAM_MULT + USB_SRAM_START_ADDRESS), &usb_state.request, 8);
+        mem_copy16_fromusb((void*)(USB_GET_ADDR_RX(usb_buffer_table[0]) * USB_SRAM_MULT + USB_SRAM_START_ADDRESS), &usb_state.request, 8);
         usb_state.control_state = USB_CONTROL_DATA_RX;
       }
       else {
@@ -373,15 +480,17 @@ void usb_core_ep_rx(uint32_t ep){
       }
     }
     else if(usb_state.control_state == USB_CONTROL_DATA_RX) {
-      usb_core_handle_request(&usb_state.request,(const uint8_t*)(usb_buffer_table[0].addr_rx * USB_SRAM_MULT + USB_SRAM_START_ADDRESS));
       usb_state.control_state = USB_CONTROL_IDLE;
+      usb_core_handle_request(&usb_state.request,(const uint8_t*)(USB_GET_ADDR_RX(usb_buffer_table[0]) * USB_SRAM_MULT + USB_SRAM_START_ADDRESS));
     }
 
-    /* Re-enable reception */
-    USB_EPx(0) = 0x9280;
+    if(usb_state.control_state != USB_CONTROL_DATA_TX){
+      /* Re-enable reception */
+      USB_EPx(0) = 0x9280;
+    }
   }
   else if(ep == 2){
-    uint16_t* rx_data = (uint16_t*)(usb_buffer_table[2].addr_rx * USB_SRAM_MULT + USB_SRAM_START_ADDRESS);
+    uint16_t* rx_data = (uint16_t*)(USB_GET_ADDR_RX(usb_buffer_table[2]) * USB_SRAM_MULT + USB_SRAM_START_ADDRESS);
 
     /* Clear RX flag */
     USB_EPx(2) = 0x0082;
@@ -413,6 +522,10 @@ void usb_interrupt(){
 
     if(istr & USB_ISTR_CTR){
       if(istr & USB_ISTR_DIR){
+        if(USB_EPx(istr & 0xF) & 0x80){
+          /* Both RX and TX active */
+          usb_core_ep_tx(istr & 0xF);
+        }
         usb_core_ep_rx(istr & 0xF);
       }
       else {

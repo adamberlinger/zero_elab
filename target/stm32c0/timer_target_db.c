@@ -45,6 +45,7 @@ const timer_pin_db_t timer_pin_db[TIM_PIN_DB_SIZE] = {
     TIM_CHANNEL_ENTRY(17,1,GPIOB_BASE,9,2),
     TIM_CHANNEL_ENTRY(17,1,GPIOA_BASE,7,5),
     TIM_CHANNEL_ENTRY(17,1,GPIOB_BASE,7,2), /* Complementary */
+    TIM_CHANNEL_ENTRY(17,1,GPIOA_BASE,4,5), /* Complementary */
 
 
     /* TIM1 without complementary channels (12) */
@@ -58,6 +59,11 @@ const timer_pin_db_t timer_pin_db[TIM_PIN_DB_SIZE] = {
     TIM_CHANNEL_ENTRY(3,2,GPIOA_BASE,7,1),
     TIM_CHANNEL_ENTRY(3,3,GPIOB_BASE,0,1),
     TIM_CHANNEL_ENTRY(3,4,GPIOB_BASE,1,1),
+
+#ifdef STM32C071xx
+    /* TIM2 */
+    TIM_CHANNEL_ENTRY(2,1,GPIOA_BASE, 5, 3),
+#endif
 };
 
 const timer_config_db_t timer_config_db[TIM_CONFIG_DB_SIZE] = {
@@ -68,6 +74,9 @@ const timer_config_db_t timer_config_db[TIM_CONFIG_DB_SIZE] = {
 
     {16, TIM16, TIMER_TYPE_GENERAL | TIMER_TYPE_HAS_COMPLEMENTARY, 1, &RCC->APBENR2, &RCC->APBRSTR2, RCC_APBENR2_TIM16EN},
     {17, TIM17, TIMER_TYPE_GENERAL | TIMER_TYPE_HAS_COMPLEMENTARY, 1, &RCC->APBENR2, &RCC->APBRSTR2, RCC_APBENR2_TIM17EN},
+#ifdef STM32C071xx
+    {2, TIM2, TIMER_TYPE_GENERAL, 4, &RCC->APBENR1, &RCC->APBRSTR1, RCC_APBENR1_TIM2EN},
+#endif
 };
 
 const timer_slave_db_t timer_slave_db[TIM_SLAVE_DB_SIZE] = {
@@ -80,6 +89,9 @@ const timer_slave_db_t timer_slave_db[TIM_SLAVE_DB_SIZE] = {
 
 const timer_dma_db_t timer_dma_db[TIM_DMA_DB_SIZE] = {
     {1, 25},
+#ifdef STM32C071xx
+    {2, 31},
+#endif
     {3, 37},
 
     {16, 46},

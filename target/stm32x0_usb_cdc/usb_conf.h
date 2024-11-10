@@ -38,14 +38,31 @@
     extern "C" {
 #endif
 
-
+#ifdef STM32C0XX
+#define USB_SRAM_START_ADDRESS (0x40009800)
+#define USB_SRAM_32ACCESS
+#else
 #define USB_SRAM_START_ADDRESS (0x40006000)
+#endif
 
 #define usb_ms_delay           wait_ms
 #define usb_interrupt          usb_handler
 
 #ifdef STM32F1XX
   #define USB_SRAM_32BIT
+#endif
+
+#ifdef STM32C0XX
+  #define USB USB_DRD_FS
+  #define EP0R CHEP0R
+  #define EP1R CHEP1R
+  #define EP2R CHEP2R
+  #define EP3R CHEP3R
+  #define EP4R CHEP4R
+  #define EP5R CHEP5R
+  #define EP6R CHEP6R
+  #define EP7R CHEP7R
+  #define USB_CNTR_FRES USB_CNTR_USBRST
 #endif
 
 #ifdef __cplusplus
