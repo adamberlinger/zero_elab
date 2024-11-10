@@ -84,11 +84,11 @@ GDB_SERVER=openocd -f target/$(TARGET_NAME)/openocd.cfg
 
 .PHONY: debug flash elf doc
 
+hex: $(HEX_FILE)
+
 elf: $(ELF_FILE)
 
 bin: $(BIN_FILE)
-
-hex: $(HEX_FILE)
 
 dfu: $(DFU_FILE)
 
