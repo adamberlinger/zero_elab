@@ -5,6 +5,6 @@ MEMORY
 }
 
 STACK_SIZE = 0x400;
-HEAP_SIZE = 20K;
+HEAP_SIZE = 21K;
 
 INCLUDE target/stm32_common/linkerscript.ld

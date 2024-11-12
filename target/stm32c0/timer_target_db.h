@@ -50,7 +50,7 @@
 #endif
 
 #define TIM14_PIN_SIZE         2
-#define TIM16_PIN_SIZE         3
+#define TIM16_PIN_SIZE         4
 #define TIM17_PIN_SIZE         4
 
 #define TIM_PIN_DB_SIZE    (TIM1_PIN_SIZE + TIM3_PIN_SIZE + \

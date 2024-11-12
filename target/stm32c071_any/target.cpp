@@ -81,21 +81,12 @@ void target_init(){
 uint32_t current_config = 0;
 
 uint32_t get_target_capabilities(){
-#if 0
   if(current_config == 0){
     return 0x3C;
   }
   else {
     return 0x37;
   }
-#else
-  if(current_config == 0){
-    return 0x1C;
-  }
-  else {
-    return 0x17;
-  }
-#endif
 }
 
 const timer_init_t tim16_init = {
@@ -129,7 +120,7 @@ static void init_common(){
 
 static void init_voltmeter_variant(){
     init_common();
-    //init_generator();
+    init_generator();
 
     VOLTMETER_ADD_CHANNEL(volt1,DEFINE_PIN(GPIOA_BASE,0),0);
     VOLTMETER_ADD_CHANNEL(volt1,DEFINE_PIN(GPIOA_BASE,1),1);
@@ -147,7 +138,7 @@ static void init_voltmeter_variant(){
 
 static void init_oscilloscope_variant(){
     init_common();
-    //init_generator();
+    init_generator();
 
     /* AN0 - AN3 on arduino header */
     OSC_ADD_CHANNEL(osc1,DEFINE_PIN(GPIOA_BASE,0),0);
