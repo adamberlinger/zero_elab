@@ -53,7 +53,7 @@ DEFAULT_HANDLER(usb_handler);
 
 DEFAULT_HANDLER(dma1_channel1_handler);
 DEFAULT_HANDLER(dma1_channel2_3_handler);
-DEFAULT_HANDLER(dmamux_handler);
+DEFAULT_HANDLER(dma1_channel4_5_handler);
 DEFAULT_HANDLER(adc_comp_handler);
 DEFAULT_HANDLER(tim1_brk_up_trg_com_handler);
 DEFAULT_HANDLER(tim1_cc_handler);
@@ -80,7 +80,7 @@ NVIC_VENDOR_ATTRIBUTE = {
 
     (void*)dma1_channel1_handler,
     (void*)dma1_channel2_3_handler,
-    (void*)dmamux_handler,
+    (void*)dma1_channel4_5_handler, /* DMA MUX on smaller C0 */
 
     (void*)adc_comp_handler,
     (void*)tim1_brk_up_trg_com_handler,

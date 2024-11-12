@@ -55,6 +55,11 @@ int dma_get_irqn(dma_handle_t dma_handle){
     if(result == 0){
         return DMA1_Channel1_IRQn;
     }
+#ifdef STM32C071xx
+    else if(result >= 3){
+        return DMAMUX1_DMA1_CH4_5_IRQn;
+    }
+#endif
     else {
         return DMA1_Channel2_3_IRQn;
     }
@@ -69,4 +74,9 @@ void dma1_channel2_3_handler(void){
     dma1_generic_handler(2);
 }
 
-
+#ifdef STM32C071xx
+void dma1_channel4_5_handler(void){
+    dma1_generic_handler(3);
+    dma1_generic_handler(4);
+}
+#endif

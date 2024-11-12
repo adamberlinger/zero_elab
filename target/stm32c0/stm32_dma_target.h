@@ -36,7 +36,11 @@
     extern "C" {
 #endif
 
+#ifdef STM32C071xx
+#define NUM_DMA_CHANNELS (5)
+#else
 #define NUM_DMA_CHANNELS (3)
+#endif
 
 #ifdef __cplusplus
     }
