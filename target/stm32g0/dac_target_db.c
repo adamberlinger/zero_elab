@@ -29,23 +29,20 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _META_H_
-#define _META_H_
+#include "dac_target_db.h"
 
-#include "core.h"
+#define DAC_PIN_ENTRY(dac_id,dac_channel,port,pin) {DEFINE_DAC_CHANNEL(dac_id,dac_channel),DEFINE_PIN(port,pin)}
 
-#ifdef __cplusplus
-    extern "C" {
-#endif
+const dac_pin_db_t dac_pin_db[DAC_PIN_DB_SIZE] = {
+    DAC_PIN_ENTRY(1, 1, GPIOA_BASE, 4),
+    DAC_PIN_ENTRY(1, 2, GPIOA_BASE, 5),
+};
 
-#define FIRMWARE_VERSION    (0x0100)
-
-extern const char* target_name;
-extern uint32_t target_name_length;
-extern const char* volatile target_configuration_name;
-
-#ifdef __cplusplus
-    }
-#endif
-
-#endif
+const dac_dma_db_t dac_dma_db[DAC_DMA_DB_SIZE] = {
+    {DEFINE_DAC_CHANNEL(1,1), 8},
+    {DEFINE_DAC_CHANNEL(1,2), 9},
+};
+const dac_tim_db_t dac_tim_db[DAC_TIM_DB_SIZE] = {
+    {1, 6, 5},
+    {1, 7, 6},
+};

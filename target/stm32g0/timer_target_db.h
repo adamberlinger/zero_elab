@@ -42,7 +42,7 @@
 #endif
 
 #define TIM1_PIN_SIZE          4
-#define TIM2_PIN_SIZE          6
+#define TIM2_PIN_SIZE          7
 #define TIM3_PIN_SIZE          4
 
 #define TIM14_PIN_SIZE         1
@@ -53,7 +53,11 @@
         TIM14_PIN_SIZE + TIM16_PIN_SIZE + \
         TIM17_PIN_SIZE)
 
+#ifdef TIM6
+#define TIM_CONFIG_DB_SIZE (7)
+#else
 #define TIM_CONFIG_DB_SIZE (6)
+#endif
 #define TIM_DMA_DB_SIZE (6)
 
 #define TIM_SLAVE_DB_SIZE (6)

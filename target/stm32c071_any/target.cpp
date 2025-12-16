@@ -186,3 +186,74 @@ void functions_init(void){
 
     vdda_value = volt1_module->getVDDA();
 }
+
+const uint8_t* get_target_pinout(uint16_t* length){
+  static uint8_t pinout_val[PINOUT_SIZE(16)];
+  int size = 1;
+  uint8_t af = ((current_config & 0x1) == 0)?PINOUT_VOLT:PINOUT_OSC;
+
+  if((pkg_index == 0) || (pkg_index == 1)){
+    pinout_val [0] = PINOUT_TSSOP20;
+
+    PINOUT_ADD_SYS( pinout_val, size, 4, PINOUT_VDD);
+    PINOUT_ADD_SYS( pinout_val, size, 5, PINOUT_GND);
+    PINOUT_ADD_SYS( pinout_val, size, 6, PINOUT_NRST);
+    PINOUT_ADD_SPEC(pinout_val, size, 7, 'A', 0, af, 0);
+    PINOUT_ADD_SPEC(pinout_val, size, 8, 'A', 1, af, 1);
+    PINOUT_ADD_SPEC(pinout_val, size, 9, 'A', 2, af, 2);
+    if(current_config & 0x1){
+      PINOUT_ADD_SPEC(pinout_val, size,10, 'A', 3, af, 3);
+    }
+    PINOUT_ADD_SPEC(pinout_val, size,11, 'A', 4, PINOUT_PWM, 0);
+    PINOUT_ADD_SPEC(pinout_val, size,12, 'A', 5, PINOUT_PWM_IN, 0);
+    PINOUT_ADD_SPEC(pinout_val, size,13, 'A', 6, PINOUT_GEN, 0);
+    PINOUT_ADD_CORE(pinout_val, size,14, 'A', 7, PINOUT_START_BLINK);
+    PINOUT_ADD_CORE(pinout_val, size,16, 'A',11, PINOUT_USB_DM);
+    PINOUT_ADD_CORE(pinout_val, size,17, 'A',12, PINOUT_USB_DP);
+    PINOUT_ADD_CORE(pinout_val, size,18, 'A',13, PINOUT_SWDIO);
+    PINOUT_ADD_SYS( pinout_val, size,19, PINOUT_BOOT0);
+    PINOUT_ADD_CORE(pinout_val, size,19, 'A',14, PINOUT_SWCLK);
+  }
+  else if((pkg_index == 2) || (pkg_index == 3)){
+    pinout_val[0] = PINOUT_LQFP32;
+
+    PINOUT_ADD_SYS( pinout_val, size, 4, PINOUT_VDD);
+    PINOUT_ADD_SYS( pinout_val, size, 5, PINOUT_GND);
+    PINOUT_ADD_SYS( pinout_val, size, 6, PINOUT_NRST);
+    PINOUT_ADD_SPEC(pinout_val, size, 7, 'A', 0, af, 0);
+    PINOUT_ADD_SPEC(pinout_val, size, 8, 'A', 1, af, 1);
+    PINOUT_ADD_SPEC(pinout_val, size, 9, 'A', 2, af, 2);
+    if(current_config & 0x1){
+      PINOUT_ADD_SPEC(pinout_val, size,10, 'A', 3, af, 3);
+    }
+    PINOUT_ADD_SPEC(pinout_val, size,11, 'A', 4, PINOUT_PWM, 0);
+    PINOUT_ADD_SPEC(pinout_val, size,12, 'A', 5, PINOUT_PWM_IN, 0);
+    PINOUT_ADD_SPEC(pinout_val, size,13, 'A', 6, PINOUT_GEN, 0);
+    PINOUT_ADD_CORE(pinout_val, size,14, 'A', 7, PINOUT_START_BLINK);
+    PINOUT_ADD_CORE(pinout_val, size,22, 'A',11, PINOUT_USB_DM);
+    PINOUT_ADD_CORE(pinout_val, size,23, 'A',12, PINOUT_USB_DP);
+    PINOUT_ADD_CORE(pinout_val, size,24, 'A',13, PINOUT_SWDIO);
+    PINOUT_ADD_SYS( pinout_val, size,25, PINOUT_BOOT0);
+    PINOUT_ADD_CORE(pinout_val, size,25, 'A',14, PINOUT_SWCLK);
+  }
+  else if((pkg_index == 4) || (pkg_index == 5)){
+    pinout_val[0] = PINOUT_ARDUINO;
+
+    PINOUT_ADD_SPEC(pinout_val, size,   0, 'A', 0, af, 0);
+    PINOUT_ADD_SPEC(pinout_val, size,   1, 'A', 1, af, 1);
+    PINOUT_ADD_SPEC(pinout_val, size,   2, 'A', 4, af, 2);
+    if(current_config & 0x1){
+      PINOUT_ADD_SPEC(pinout_val, size,   3, 'B', 0, af, 3);
+    }
+    PINOUT_ADD_SPEC(pinout_val, size,6+ 0, 'B', 7, PINOUT_PWM, 0);
+    PINOUT_ADD_CORE(pinout_val, size,7+11, 'A', 7, PINOUT_START_BLINK);
+    PINOUT_ADD_SPEC(pinout_val, size,7+12, 'A', 6, PINOUT_GEN, 0);
+    PINOUT_ADD_SPEC(pinout_val, size,7+13, 'A', 5, PINOUT_PWM_IN, 0);
+  }
+  else {
+    pinout_val[0] = PINOUT_NONE;
+  }
+
+  *length = size;
+  return pinout_val;
+}

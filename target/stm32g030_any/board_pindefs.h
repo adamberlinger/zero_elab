@@ -29,23 +29,9 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _META_H_
-#define _META_H_
+#ifndef _BOARD_PINDEFS_H_
+#define _BOARD_PINDEFS_H_
 
-#include "core.h"
+#define GPIO_UNUSED_PIN_RANGE_SIZE 0
 
-#ifdef __cplusplus
-    extern "C" {
-#endif
-
-#define FIRMWARE_VERSION    (0x0100)
-
-extern const char* target_name;
-extern uint32_t target_name_length;
-extern const char* volatile target_configuration_name;
-
-#ifdef __cplusplus
-    }
-#endif
-
-#endif
+#endif /* _BOARD_PINDEFS_H_ */

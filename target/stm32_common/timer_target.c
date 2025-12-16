@@ -167,7 +167,7 @@ int timer_target_init(timer_handle_t* timer_handle, int timer_id, const timer_in
             return ERROR_NO_CONFIGURATION;
         }
 
-        if(init_data->pin){
+        if(init_data->pin != PIN_NOT_DEFINED){
             stm32_gpio_af(init_data->pin,MODE_OUT_PP,af);
         }
 
@@ -223,7 +223,7 @@ int timer_target_init(timer_handle_t* timer_handle, int timer_id, const timer_in
             return ERROR_NO_CONFIGURATION;
         }
 
-        if(init_data->pin){
+        if(init_data->pin != PIN_NOT_DEFINED){
             stm32_gpio_af(init_data->pin,MODE_IN,af);
         }
 

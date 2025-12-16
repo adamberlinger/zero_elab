@@ -75,7 +75,7 @@ comm_t *get_main_comm(void){
 }
 
 VOLTMETER_DECLARE(volt1, 12, 4);
-/* PA7 -> D11 */
+/* PB7 -> D0 */
 PWM_DECLARE(pwm1, DEFINE_PIN(GPIOB_BASE, 7));
 OSC_DECLARE(osc1, 12, 4, 4*1024);
 
@@ -180,3 +180,24 @@ void functions_init(void){
 
     vdda_value = volt1_module->getVDDA();
 }
+
+const uint8_t* get_target_pinout(uint16_t* length){
+  static uint8_t pinout_val[PINOUT_SIZE(16)];
+  int size = 1;
+  uint8_t af = ((current_config & 0x1) == 0)?PINOUT_VOLT:PINOUT_OSC;
+
+  pinout_val[0] = PINOUT_ARDUINO;
+
+  PINOUT_ADD_SPEC(pinout_val, size,   0, 'A', 0, af, 0);
+  PINOUT_ADD_SPEC(pinout_val, size,   1, 'A', 1, af, 1);
+  PINOUT_ADD_SPEC(pinout_val, size,   2, 'A', 4, af, 2);
+  if(current_config & 0x1){
+    PINOUT_ADD_SPEC(pinout_val, size,   3, 'B', 1, af, 3);
+  }
+  PINOUT_ADD_SPEC(pinout_val, size,6+ 0, 'B', 7, PINOUT_PWM, 0);
+  PINOUT_ADD_SPEC(pinout_val, size,6+ 1, 'B', 6, PINOUT_GEN, 0);
+
+  *length = size;
+  return pinout_val;
+}
+

@@ -155,3 +155,36 @@ void functions_init(void){
     vdda_value = volt1_module->getVDDA();
     if(vdda_value == 0) vdda_value = 3000;
 }
+
+const uint8_t* get_target_pinout(uint16_t* length){
+    static uint8_t pinout_val[PINOUT_SIZE(16)];
+    int size = 1;
+    pinout_val [0] = PINOUT_GENERIC_PACKAGE(40);
+
+    PINOUT_ADD_SPEC(pinout_val, size, 5, 'A', 8, PINOUT_PWM_IN, 0);
+    PINOUT_ADD_SPEC(pinout_val, size,14, 'B', 6, PINOUT_PWM, 0);
+    PINOUT_ADD_SYS( pinout_val, size,18, PINOUT_5V);
+    PINOUT_ADD_SYS( pinout_val, size,19, PINOUT_GND);
+    PINOUT_ADD_SYS( pinout_val, size,20, PINOUT_VDD);
+    if((current_config & 0x1) == 0){
+        PINOUT_ADD_SPEC(pinout_val, size,25, 'A', 0, PINOUT_VOLT, 0);
+        PINOUT_ADD_SPEC(pinout_val, size,26, 'A', 1, PINOUT_VOLT, 1);
+        PINOUT_ADD_SPEC(pinout_val, size,27, 'A', 2, PINOUT_VOLT, 2);
+    }
+    else {
+        PINOUT_ADD_SPEC(pinout_val, size,25, 'A', 0, PINOUT_OSC, 0);
+        PINOUT_ADD_SPEC(pinout_val, size,26, 'A', 1, PINOUT_OSC, 1);
+        PINOUT_ADD_SPEC(pinout_val, size,27, 'A', 2, PINOUT_OSC, 2);
+        PINOUT_ADD_SPEC(pinout_val, size,28, 'A', 3, PINOUT_OSC, 3);
+        PINOUT_ADD_SPEC(pinout_val, size,29, 'A', 4, PINOUT_VOLT, 0);
+        PINOUT_ADD_SPEC(pinout_val, size,30, 'A', 5, PINOUT_VOLT, 1);
+        PINOUT_ADD_SPEC(pinout_val, size,31, 'A', 6, PINOUT_VOLT, 2);
+    }
+    PINOUT_ADD_SYS( pinout_val, size,37, PINOUT_NRST);
+    PINOUT_ADD_SYS( pinout_val, size,38, PINOUT_VDD);
+    PINOUT_ADD_SYS( pinout_val, size,39, PINOUT_GND);
+    PINOUT_ADD_SYS( pinout_val, size,40, PINOUT_GND);
+    *length = size;
+    return pinout_val;
+}
+

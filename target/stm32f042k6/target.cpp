@@ -209,3 +209,43 @@ void functions_init(void){
     init_voltmeter_variant();
     vdda_value = volt1_module->getVDDA();
 }
+
+const uint8_t* get_target_pinout(uint16_t* length){
+  static uint8_t pinout_val[PINOUT_SIZE(20)];
+  int size = 1;
+  uint8_t af = (current_config == 0)?PINOUT_VOLT:PINOUT_OSC;
+
+  pinout_val [0] = PINOUT_LQFP32;
+
+  PINOUT_ADD_SYS (pinout_val, size, 4, PINOUT_NRST);
+  PINOUT_ADD_SYS (pinout_val, size, 5, PINOUT_VDD);
+  PINOUT_ADD_SPEC(pinout_val, size, 6, 'A', 0, af, 0);
+  PINOUT_ADD_SPEC(pinout_val, size, 7, 'A', 1, af, 1);
+  PINOUT_ADD_SPEC(pinout_val, size,13, 'A', 7, af, 2);
+#ifdef USE_GENERATOR
+  PINOUT_ADD_SPEC(pinout_val, size,14, 'B', 0, PINOUT_GEN, 0);
+#else
+  PINOUT_ADD_SPEC(pinout_val, size,14, 'B', 0, PINOUT_PWM, 0);
+#endif
+  if(current_config == 2) {
+    PINOUT_ADD_SPEC(pinout_val, size,14, 'B', 0, PINOUT_LOG, 0);
+    PINOUT_ADD_SPEC(pinout_val, size,15, 'B', 1, PINOUT_LOG, 1);
+  }
+  PINOUT_ADD_SYS (pinout_val, size,16, PINOUT_GND);
+  PINOUT_ADD_SYS (pinout_val, size,17, PINOUT_VDD);
+  PINOUT_ADD_CORE(pinout_val, size,21, 'A',11, PINOUT_USB_DM);
+  PINOUT_ADD_CORE(pinout_val, size,22, 'A',12, PINOUT_USB_DP);
+  PINOUT_ADD_CORE(pinout_val, size,23, 'A',13, PINOUT_SWDIO);
+  PINOUT_ADD_CORE(pinout_val, size,24, 'A',14, PINOUT_SWCLK);
+  if(current_config == 2) {
+    PINOUT_ADD_SPEC(pinout_val, size,26, 'B', 3, PINOUT_LOG, 3);
+    PINOUT_ADD_SPEC(pinout_val, size,27, 'B', 4, PINOUT_LOG, 4);
+    PINOUT_ADD_SPEC(pinout_val, size,28, 'B', 5, PINOUT_LOG, 5);
+    PINOUT_ADD_SPEC(pinout_val, size,29, 'B', 6, PINOUT_LOG, 6);
+    PINOUT_ADD_SPEC(pinout_val, size,30, 'B', 7, PINOUT_LOG, 7);
+  }
+  PINOUT_ADD_CORE(pinout_val, size,31, 'B', 8, PINOUT_BOOT0);
+
+  *length = size;
+  return pinout_val;
+}

@@ -38,13 +38,12 @@
 #include "pwm_input.h"
 #include "voltmeter.h"
 #include "oscilloscope.h"
+#include "pwm_generator.h"
 #include "stm32_dma.h"
 
-/* TODO: set list of unused pins
-    - this is demo torwards 8-pin package => no unused pins on 8-pin pacakge */
 const gpio_pin_t gpio_unused_pin_range[1] = {0};
 
-#define UART_RX_BUFFER_SIZE     (1500)
+#define UART_RX_BUFFER_SIZE     (1400)
 
 static uint8_t uart_rx_buffer[UART_RX_BUFFER_SIZE];
 
@@ -54,17 +53,19 @@ static int main_uart_initialized = 0;
 static const uart_init_t main_uart_params = {
     115200,
     UART_PARITY_NONE,
-    DEFINE_PIN(GPIOA_BASE,2),/* TX pin */
-    DEFINE_PIN(GPIOA_BASE,3) /* RX pin */,
+    DEFINE_PIN(GPIOA_BASE,9),/* TX pin */
+    DEFINE_PIN(GPIOA_BASE,10) /* RX pin */,
     0,
     UART_RX_BUFFER_SIZE
 };
 
 int dma_watermark;
 
+static void tim17_gen_init();
+
 comm_t *get_main_comm(void){
     if(!main_uart_initialized){
-        uart_init(&main_uart_handle,2,&main_uart_params,uart_rx_buffer);
+        uart_init(&main_uart_handle,1,&main_uart_params,uart_rx_buffer);
         main_uart.hw_handle = &main_uart_handle;
         main_uart.write_callback = (comm_write_callback_t)uart_send_data;
         main_uart.read_callback = (comm_read_callback_t)uart_receive_data;
@@ -74,8 +75,11 @@ comm_t *get_main_comm(void){
 }
 
 VOLTMETER_DECLARE(volt1, 12, 4);
-PWM_DECLARE(pwm1, DEFINE_PIN(GPIOB_BASE, 8));
-OSC_DECLARE(osc1, 12, 4, 2*1024);
+//PWM_DECLARE(pwm1, DEFINE_PIN(GPIOA_BASE, 7));
+//PWM_DECLARE(pwm1, DEFINE_PIN(GPIOB_BASE, 6));
+PWM_DECLARE(pwm1, DEFINE_PIN(GPIOA_BASE, 2));
+
+OSC_DECLARE(osc1, 12, 3, 2*1024);
 
 uint32_t vdda_value = 3300;
 
@@ -84,22 +88,26 @@ uint32_t get_vdda(void){
 }
 
 void target_init(){
+    RCC->APBENR2 |= RCC_APBENR2_SYSCFGEN;
+    /* Enable PA9/PA10 remap */
+    SYSCFG->CFGR1 |= 0x18;
     stm32_common_init();
 }
 
-uint32_t current_config = 0;
+uint32_t current_config = 1;
 
 uint32_t get_target_capabilities(){
   if(current_config == 0){
-    return 0x0C;
+    return 0x2C;
   }
   else {
-    return 0x07;
+    return 0x27;
   }
 }
 
 static void init_common(){
     PWM_MODULE_INIT(pwm1,16);
+    tim17_gen_init();
 }
 
 static void init_voltmeter_variant(){
@@ -107,10 +115,11 @@ static void init_voltmeter_variant(){
 
     VOLTMETER_ADD_CHANNEL(volt1,DEFINE_PIN(GPIOA_BASE,0),0);
     VOLTMETER_ADD_CHANNEL(volt1,DEFINE_PIN(GPIOA_BASE,1),1);
-    VOLTMETER_ADD_CHANNEL(volt1,DEFINE_PIN(GPIOA_BASE,4),2);
-    VOLTMETER_SET_REFCHANNEL(volt1,13);
+    VOLTMETER_ADD_CHANNEL(volt1,DEFINE_PIN(GPIOA_BASE,8),2);
+    VOLTMETER_SET_REFCHANNEL(volt1,10);
 
     VOLTMETER_MODULE_INIT(volt1, 1);
+    //volt1_module->setVREFIndex(2);
 }
 
 static void init_oscilloscope_variant(){
@@ -118,8 +127,8 @@ static void init_oscilloscope_variant(){
 
     OSC_ADD_CHANNEL(osc1,DEFINE_PIN(GPIOA_BASE,0),0);
     OSC_ADD_CHANNEL(osc1,DEFINE_PIN(GPIOA_BASE,1),1);
-    OSC_ADD_CHANNEL(osc1,DEFINE_PIN(GPIOA_BASE,4),2);
-    OSC_ADD_CHANNEL(osc1,DEFINE_PIN(GPIOA_BASE,5),3);
+    //OSC_ADD_CHANNEL(osc1,DEFINE_PIN(GPIOA_BASE,4),2);
+    OSC_ADD_CHANNEL(osc1,DEFINE_PIN(GPIOA_BASE,8),2);
 
     OSC_MODULE_PREPARE(osc1,1);
 
@@ -150,37 +159,57 @@ void functions_init(void){
     dma_watermark = stm32_dma_alloc_get_watermark();
 
     target_configuration_name = "Voltmeter";
+
     init_voltmeter_variant();
 
-    //target_configuration_name = "Oscilloscope";
-    //init_oscilloscope_variant();
+    wait_ms(2);
 
     vdda_value = volt1_module->getVDDA();
-    //vdda_value = 3300;
+
+    if(current_config == 1){
+        current_config = 0;
+        set_next_device_configuration();
+    }
+}
+
+const timer_init_t tim17_init = {
+    .usage = TIMER_USAGE_PWM_GENERATOR,
+    .time_type = TIMER_INIT_FREQUENCY,
+    .time_value = 187500,
+    .duty_cycle = 50,
+    .pin = DEFINE_PIN(GPIOB_BASE,7),
+    .buffer_size = 64*2,
+};
+
+timer_handle_t tim17_handle;
+
+static void tim17_gen_init(){
+
+    timer_init(&tim17_handle, 17,  &tim17_init);
+
+    ModulePWMGenerator* gen_module = new ModulePWMGenerator(5, &tim17_handle, 187500);
+    (void)gen_module;
 }
 
 const uint8_t* get_target_pinout(uint16_t* length){
-    static uint8_t pinout_val[PINOUT_SIZE(12)];
-    int size = 1;
-    uint8_t af = (current_config == 0)?PINOUT_VOLT:PINOUT_OSC;
+  static uint8_t pinout_val[PINOUT_SIZE(11)];
+  int size = 1;
+  uint8_t af = (current_config == 0)?PINOUT_VOLT:PINOUT_OSC;
 
-    pinout_val [0] = PINOUT_GENERIC_PACKAGE(30);
+  pinout_val [0] = PINOUT_GENERIC_PACKAGE(20);
 
-    PINOUT_ADD_SYS( pinout_val, size, 3, PINOUT_NRST);
-    PINOUT_ADD_SYS( pinout_val, size, 4, PINOUT_GND);
-    PINOUT_ADD_SPEC(pinout_val, size,11, 'B', 8, PINOUT_PWM, 0);
-    PINOUT_ADD_SYS( pinout_val, size,17, PINOUT_VDD);
-    PINOUT_ADD_SYS( pinout_val, size,18, PINOUT_VDD);
-    PINOUT_ADD_SPEC(pinout_val, size,19, 'A', 0, af, 0);
-    PINOUT_ADD_SPEC(pinout_val, size,20, 'A', 1, af, 1);
-    PINOUT_ADD_SPEC(pinout_val, size,21, 'A', 4, af, 2);
-    if(current_config == 1){
-        PINOUT_ADD_SPEC(pinout_val, size,22, 'A', 5, af, 3);
-    }
-    PINOUT_ADD_SYS( pinout_val, size,27, PINOUT_5V);
-    PINOUT_ADD_SYS( pinout_val, size,28, PINOUT_NRST);
-    PINOUT_ADD_SYS( pinout_val, size,29, PINOUT_GND);
+  PINOUT_ADD_SYS (pinout_val, size, 2, PINOUT_VDD);
+  PINOUT_ADD_SYS (pinout_val, size, 3, PINOUT_GND);
+  PINOUT_ADD_CORE(pinout_val, size, 4, 'F', 2, PINOUT_NRST);
+  PINOUT_ADD_SPEC(pinout_val, size, 5, 'A', 0, af, 0);
+  PINOUT_ADD_SPEC(pinout_val, size, 6, 'A', 1, af, 1);
+  PINOUT_ADD_SPEC(pinout_val, size, 7, 'A', 2, PINOUT_PWM, 0);
+  PINOUT_ADD_CORE(pinout_val, size,14, 'A',14, PINOUT_SWCLK);
+  PINOUT_ADD_CORE(pinout_val, size,15, 'A',13, PINOUT_SWDIO);
+  PINOUT_ADD_CORE(pinout_val, size,16, 'A',10, PINOUT_UART_RX);
+  PINOUT_ADD_CORE(pinout_val, size,17, 'A', 9, PINOUT_UART_TX);
+  PINOUT_ADD_SPEC(pinout_val, size,18, 'A', 8, af, 2);
 
-    *length = size;
-    return pinout_val;
+  *length = size;
+  return pinout_val;
 }

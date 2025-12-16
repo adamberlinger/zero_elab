@@ -68,7 +68,7 @@ typedef enum {
 } dma_dir_t;
 
 typedef struct {
-    void* memory_address;
+    volatile void* memory_address;
     void* periph_address;
     uint32_t data_size;
     dma_dir_t direction;

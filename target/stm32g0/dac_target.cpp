@@ -29,23 +29,46 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _META_H_
-#define _META_H_
+#ifdef DAC_PERIPH_ENABLED
 
-#include "core.h"
+#include "dac.h"
+#include "mem.h"
+#include "dac_target_db.h"
+#include "error_codes.h"
 
-#ifdef __cplusplus
-    extern "C" {
-#endif
-
-#define FIRMWARE_VERSION    (0x0100)
-
-extern const char* target_name;
-extern uint32_t target_name_length;
-extern const char* volatile target_configuration_name;
-
-#ifdef __cplusplus
+gpio_pin_t dac_target_find_pin(int dac_id,int channel){
+    uint8_t dac_channel = DEFINE_DAC_CHANNEL(dac_id,channel);
+    int i;
+    for(i = 0; i < DAC_PIN_DB_SIZE;++i){
+        if(dac_pin_db[i].dac_channel == dac_channel){
+            return dac_pin_db[i].pin;
+        }
     }
-#endif
+    return (gpio_pin_t)0;
+}
+
+int dac_target_find_timer(int dac_id,uint8_t* trigger_source){
+    int i;
+    for(i = 0; i < DAC_TIM_DB_SIZE;++i){
+        if(dac_tim_db[i].dac_id == dac_id && timer_is_free(dac_tim_db[i].timer_id)){
+            (*trigger_source) = dac_tim_db[i].trigger_source;
+            return dac_tim_db[i].timer_id;
+        }
+    }
+    return 0;
+}
+
+dma_handle_t dac_target_find_dma(int dac_id,int channel){
+    uint8_t dac_channel = DEFINE_DAC_CHANNEL(dac_id,channel);
+    int i;
+    for(i = 0; i < DAC_DMA_DB_SIZE;++i){
+        if(dac_dma_db[i].dac_channel == dac_channel){
+            dma_handle_t result = stm32_find_dma();
+            stm32_dma_config_mux(result, dac_dma_db[i].dmamux_select);
+            return result;
+        }
+    }
+    return (dma_handle_t)0;
+}
 
 #endif

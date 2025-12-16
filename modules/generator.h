@@ -69,10 +69,45 @@
             name ## _dac_init_data.sample_rate,SAMPLE_TABLE_SIZE,12); \
     }while(0)
 
+#define GEN_MODULE_INIT_SIMPLE(name,dac_id) do {\
+        name ## _dac_handle = new PeriphDefaultDAC(1, &name ## _dac_init_data); \
+        name ## _module = new ModuleGenerator(5, name ## _dac_handle->getCircularBuffer(), \
+            name ## _dac_init_data.sample_rate,0,12); \
+    }while(0)
+
+#define DAC_OUPUT_DECLARE(name,channel) \
+    const static dac_init_t name ## _dac_init_data = { \
+        0, channel, 0, \
+    }; \
+    static ModuleDACOutput* name ## _module; \
+    static PeriphDefaultDAC* name ## _dac_handle = NULL
+
+#define DAC_OUTPUT_INIT(name,dac_id) do { \
+        name ## _dac_handle = new PeriphDefaultDAC(dac_id, &name ##  _dac_init_data); \
+        name ## _module = new ModuleDACOutput(5, name ## _dac_handle, 12); \
+    }while(0)
+
+class ModuleDACOutput : public Module {
+protected:
+    /** \brief DAC peripheral to control */
+    PeriphDefaultDAC* dac;
+    /** \brief Channel used for communication with PC application */
+    int channel;
+    /** \brief Shift (right) to apply before passing data to DAC */
+    int bit_shift;
+public:
+    ModuleDACOutput(int channel, PeriphDefaultDAC* dac, int resolution);
+    virtual void command(comm_t* comm, const command_t* command);
+};
+
 #endif /* DAC_PERIPH_ENABLED */
 
 class ModuleGenerator : public Module {
 protected:
+    /** \brief Is 1 when generator started via comand */
+    int running;
+    /** \brief When true, fixed DC value commands are ignored */
+    int disable_fix_value;
     /** \brief Circular buffer for outputing the samples
      *
      * This is where all the samples are stored.
@@ -129,6 +164,7 @@ public:
     ModuleGenerator(int channel, circular_buffer_t* circular_buffer,
         uint32_t sample_rate,uint32_t table_size,uint8_t bits);
     virtual void command(comm_t* comm, const command_t* command);
+    void ignoreDCComands();
 
     template <typename T, int data_shift>
     void process(uint8_t *_data,uint32_t _size){

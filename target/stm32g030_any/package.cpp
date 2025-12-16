@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  * 
- * Copyright (c) 2016-2022, Adam Berlinger
+ * Copyright (c) 2024, Adam Berlinger
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -29,23 +29,27 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _META_H_
-#define _META_H_
 
-#include "core.h"
+#include "package.h"
 
-#ifdef __cplusplus
-    extern "C" {
-#endif
+const g0_package_config_t pkg_config[G0_PKG_COUNT] = {
+    G0_PKG_DEFINE(SO8),
+    G0_PKG_DEFINE(TSSOP20),
+    G0_PKG_DEFINE(LQFP32),
+};
 
-#define FIRMWARE_VERSION    (0x0100)
+int pkg_index = 0;
 
-extern const char* target_name;
-extern uint32_t target_name_length;
-extern const char* volatile target_configuration_name;
-
-#ifdef __cplusplus
+void g0_package_init(void){
+    /* Identify package */
+    uint8_t pkg = (*(uint16_t*)(0x1FFF7500)) & 0xF;
+    //uint8_t pkg = SO8;
+    for(int i = 0; i < G0_PKG_COUNT;++i){
+        if(pkg == pkg_config[i].pkg_id){
+            pkg_index = i;
+            break;
+        }
     }
-#endif
-
-#endif
+    target_name = pkg_config[pkg_index].target_name;
+    target_name_length = pkg_config[pkg_index].target_name_length;
+}

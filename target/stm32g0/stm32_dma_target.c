@@ -69,8 +69,11 @@ int dma_get_signal_index(dma_handle_t dma_handle){
     return result;
 }
 
+#ifdef STM32G051xx
+#define DMA1_Channel4_5_IRQn DMA1_Ch4_7_DMAMUX1_OVR_IRQn 
+#else
 #define DMA1_Channel4_5_IRQn DMA1_Ch4_5_DMAMUX1_OVR_IRQn
-
+#endif
 int dma_get_irqn(dma_handle_t dma_handle){
     int result = dma_get_channel_num(dma_handle);
     if(result == 0){

@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  * 
- * Copyright (c) 2016-2022, Adam Berlinger
+ * Copyright (c) 2025, Adam Berlinger
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -29,23 +29,37 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _META_H_
-#define _META_H_
+#ifndef _PACKAGE_H_
+#define _PACKAGE_H_
 
 #include "core.h"
 
-#ifdef __cplusplus
-    extern "C" {
-#endif
+typedef enum {
+    SO8 = 0x1,
+    TSSOP20  = 0x3,
+    LQFP32  = 0x5,
+}g0_package_t;
 
-#define FIRMWARE_VERSION    (0x0100)
+typedef enum {
+    SO8_INDEX = 0,
+    TSSOP20_INDEX = 1,
+    LQFP32_INDEX = 2,
+}g0_package_index_t;
 
-extern const char* target_name;
-extern uint32_t target_name_length;
-extern const char* volatile target_configuration_name;
+typedef struct {
+    const char* target_name;
+    uint16_t target_name_length;
+    uint8_t pkg_id;
+}g0_package_config_t;
 
-#ifdef __cplusplus
-    }
-#endif
+#define G0_PKG_COUNT   (3)
+#define G0_PKG_NAME(name) "stm32g030 (" #name ")"
+#define G0_PKG_DEFINE_WITH_NAME(pkg, name) {name, sizeof(name), pkg}
+#define G0_PKG_DEFINE(pkg) G0_PKG_DEFINE_WITH_NAME(pkg,G0_PKG_NAME(pkg))
 
-#endif
+extern const g0_package_config_t pkg_config[G0_PKG_COUNT];
+extern int pkg_index;
+
+void g0_package_init(void);
+
+#endif /* _PACKAGE_H_ */

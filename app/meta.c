@@ -33,4 +33,4 @@
 
 const char* target_name = TARGET_NAME;
 uint32_t target_name_length = sizeof(TARGET_NAME);
-const char* target_configuration_name = NULL;
+const char* volatile target_configuration_name = NULL;

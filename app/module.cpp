@@ -109,6 +109,14 @@ uint32_t get_target_capabilities(){
     return 0xFFFFFFFF;
 }
 
+const uint8_t* get_target_pinout(uint16_t* length) __attribute__((weak));
+
+const uint8_t* get_target_pinout(uint16_t* length){
+    static const uint8_t pinout = PINOUT_NONE;
+    *length = 1;
+    return &pinout;
+}
+
 void Module::mainCommand(comm_t* comm,const command_t* command){
     if(command->command_id == 'G'){
         if(command->value == 'N'){
@@ -136,6 +144,12 @@ void Module::mainCommand(comm_t* comm,const command_t* command){
             uint32_t value = get_target_capabilities();
             send_binary_data_header(comm,0,4);
             comm_write(comm,(char*)&value,4);
+        }
+        else if(command->value == 'P'){
+            uint16_t size;
+            const uint8_t* value = get_target_pinout(&size);
+            send_binary_data_header(comm,0,size);
+            comm_write(comm,(const char*)value,size);
         }
     }
     else if(command->command_id == 'C'){

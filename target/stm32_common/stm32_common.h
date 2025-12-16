@@ -70,6 +70,7 @@
 #define GPIO_PIN_MASK   (uint16_t)(0xF)
 
 #define DEFINE_PIN(port,pin) (gpio_pin_t)(((uint32_t)(port) & GPIO_PORT_MASK) | ((uint16_t)(pin) & GPIO_PIN_MASK))
+#define PIN_NOT_DEFINED     ((gpio_pin_t)0xFFFF)
 
 #ifdef STM_NUCLEO32
     #include "nucleo32_pindef.h"

@@ -150,6 +150,15 @@ clean:
 flash: $(ELF_FILE)
 	$(GDB_SERVER) -c "program $(ELF_FILE) verify reset"
 
+stm32prg_uart: $(HEX_FILE)
+	STM32_Programmer_CLI -c port=/dev/ttyUSB0 -d $(HEX_FILE)
+
+stm32prg_swd: $(HEX_FILE)
+	STM32_Programmer_CLI -c port=SWD -d $(HEX_FILE)
+
+stm32prg_usb: $(HEX_FILE)
+	STM32_Programmer_CLI -c port=USB1 -d $(HEX_FILE)
+
 # Run the server (step1 of debuggin from command line)
 server:
 	$(GDB_SERVER)

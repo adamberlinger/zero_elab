@@ -29,20 +29,42 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _META_H_
-#define _META_H_
+#ifndef _DAC_TARGET_DB_H_
+#define _DAC_TARGET_DB_H_
 
-#include "core.h"
+#include <stdint.h>
+#include "stm32_common.h"
+#include "stm32_dma.h"
 
 #ifdef __cplusplus
     extern "C" {
 #endif
 
-#define FIRMWARE_VERSION    (0x0100)
+#define DAC_PIN_DB_SIZE 2
+#define DAC_DMA_DB_SIZE 2
+#define DAC_TIM_DB_SIZE 2
 
-extern const char* target_name;
-extern uint32_t target_name_length;
-extern const char* volatile target_configuration_name;
+#define DEFINE_DAC_CHANNEL(dac,channel) (uint8_t)(((dac & 0xF) << 4) | (channel & 0xF))
+
+typedef struct {
+    uint8_t dac_channel;
+    gpio_pin_t pin;
+}dac_pin_db_t;
+
+typedef struct {
+    uint8_t dac_channel;
+    uint32_t dmamux_select;
+}dac_dma_db_t;
+
+typedef struct {
+    uint8_t dac_id;
+    uint8_t timer_id;
+    uint8_t trigger_source;
+}dac_tim_db_t;
+
+extern const dac_pin_db_t dac_pin_db[DAC_PIN_DB_SIZE];
+extern const dac_dma_db_t dac_dma_db[DAC_DMA_DB_SIZE];
+extern const dac_tim_db_t dac_tim_db[DAC_TIM_DB_SIZE];
 
 #ifdef __cplusplus
     }

@@ -41,6 +41,7 @@
 #define _MODULE_H_
 
 #include "core.h"
+#include "pinout.h"
 
 typedef enum {
     MODULE_CHANNEL_OSC = 1,

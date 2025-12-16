@@ -67,8 +67,13 @@ int rand(void){
 
 size_t strlen(const char* str){
     size_t result = 0;
-    while(str[result] == 0){
+    if(str == NULL) return 0;
+    while(str[result] != '\0'){
         result++;
+        /* TODO: debug why this is necessary */
+        if(result >= 64){
+          return 0;
+        }
     }
     return result;
 }

@@ -125,3 +125,25 @@ void functions_init(void){
 
     vdda_value = volt1_module->getVDDA();
 }
+
+const uint8_t* get_target_pinout(uint16_t* length){
+  static uint8_t pinout_val[PINOUT_SIZE(8)];
+  int size = 1;
+
+  pinout_val[0] = PINOUT_ARDUINO;
+
+  PINOUT_ADD_SPEC(pinout_val, size,   0, 'A', 0, PINOUT_VOLT, 0);
+  PINOUT_ADD_SPEC(pinout_val, size,   1, 'A', 1, PINOUT_VOLT, 1);
+  PINOUT_ADD_SPEC(pinout_val, size,   2, 'A', 4, PINOUT_GEN, 0);
+  PINOUT_ADD_SPEC(pinout_val, size,6+ 7, 'A', 8, PINOUT_PULSE, 0);
+  PINOUT_ADD_SPEC(pinout_val, size,7+11, 'A', 7, PINOUT_PWM, 0);
+  PINOUT_ADD_SPEC(pinout_val, size,7+12, 'A', 6, PINOUT_OSC, 0);
+
+  PINOUT_ADD_SPEC(pinout_val, size,PINOUT_OUTSIDE_PIN, 'C', 4, PINOUT_OSC, 1);
+  PINOUT_ADD_SPEC(pinout_val, size,PINOUT_OUTSIDE_PIN, 'B',14, PINOUT_PWM_IN, 0);
+
+
+  *length = size;
+  return pinout_val;
+}
+
