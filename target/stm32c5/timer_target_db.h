@@ -29,44 +29,47 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _USB_CONF_H
-#define _USB_CONF_H
+#ifndef _TIMER_TARGET_DB_H_
+#define _TIMER_TARGET_DB_H_
 
+#include <stdint.h>
 #include "stm32_common.h"
+#include "stm32_dma.h"
+#include "timer.h"
 
 #ifdef __cplusplus
     extern "C" {
 #endif
 
-#ifdef STM32C0XX
-#define USB_SRAM_START_ADDRESS (0x40009800)
-#define USB_SRAM_32ACCESS
-#elif defined(STM32C5XX)
-#define USB_SRAM_START_ADDRESS (0x40016400)
-#define USB_SRAM_32ACCESS
-#else
-#define USB_SRAM_START_ADDRESS (0x40006000)
-#endif
+#define TIM1_PIN_SIZE          0
+#define TIM2_PIN_SIZE          1
+#define TIM5_PIN_SIZE          0
+#define TIM8_PIN_SIZE          0
 
-#define usb_ms_delay           wait_ms
-#define usb_interrupt          usb_handler
+#define TIM12_PIN_SIZE         0
+#define TIM15_PIN_SIZE         0
+#define TIM16_PIN_SIZE         0
+#define TIM17_PIN_SIZE         0
 
-#ifdef STM32F1XX
-  #define USB_SRAM_32BIT
-#endif
+#define TIM_PIN_DB_SIZE    (TIM1_PIN_SIZE + TIM2_PIN_SIZE + \
+        TIM5_PIN_SIZE + TIM8_PIN_SIZE + \
+        TIM12_PIN_SIZE + TIM15_PIN_SIZE + \
+        TIM16_PIN_SIZE + TIM17_PIN_SIZE)
 
-#if defined(STM32C0XX) || defined(STM32C5XX)
-  #define USB USB_DRD_FS
-  #define EP0R CHEP0R
-  #define EP1R CHEP1R
-  #define EP2R CHEP2R
-  #define EP3R CHEP3R
-  #define EP4R CHEP4R
-  #define EP5R CHEP5R
-  #define EP6R CHEP6R
-  #define EP7R CHEP7R
-  #define USB_CNTR_FRES USB_CNTR_USBRST
-#endif
+#define TIM_CONFIG_DB_SIZE (10)
+
+/* Only TIM12 doesn't have DMA */
+#define TIM_DMA_DB_SIZE (9)
+
+#define TIM_SLAVE_DB_SIZE (0)
+
+#define TIM_ETR_DB_SIZE     (0)
+
+extern const timer_pin_db_t timer_pin_db[TIM_PIN_DB_SIZE];
+extern const timer_config_db_t timer_config_db[TIM_CONFIG_DB_SIZE];
+extern const timer_slave_db_t timer_slave_db[TIM_SLAVE_DB_SIZE];
+extern const timer_dma_db_t timer_dma_db[TIM_DMA_DB_SIZE];
+extern const timer_pin_db_t timer_etr_db[TIM_ETR_DB_SIZE];
 
 #ifdef __cplusplus
     }

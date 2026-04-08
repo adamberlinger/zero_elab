@@ -60,6 +60,10 @@
     #include "stm32g0xx.h"
 #elif STM32C0XX
     #include "stm32c0xx.h"
+#elif STM32C5XX
+    #include "stm32c5xx.h"
+#elif STM32H5XX
+    #include "stm32h5xx.h"
 #else
     #error "STM32 target not recognized. Missing define"
 #endif

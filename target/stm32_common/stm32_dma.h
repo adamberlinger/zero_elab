@@ -48,6 +48,21 @@
     extern "C" {
 #endif
 
+#ifdef STM32_HASGPDMA
+#ifndef DMA_CCR_LAP
+#define DMA_CCR_LAP 0
+#endif
+#ifndef DMA_CTR1_SAP
+#define DMA_CTR1_SAP 0
+#endif
+#ifndef DMA_CTR1_DAP
+#define DMA_CTR1_DAP 0
+#endif
+#ifndef DMA_CTR2_DREQ
+#define DMA_CTR2_DREQ 0
+#endif
+#endif /* STM32_HASGPDMA */
+
 typedef enum {
     DMA_EVENT_FULL_COMPLETE,
     DMA_EVENT_HALF_COMPLETE
@@ -58,6 +73,9 @@ typedef void (*dma_signal_callback_t)(void* arg,dma_event_t dma_event);
 typedef struct {
     dma_signal_callback_t callback;
     void* user_arg;
+#ifdef STM32_HASGPDMA
+    uint32_t lli_address;
+#endif
 } dma_signal_slot_t;
 
 extern dma_signal_slot_t dma_signals[NUM_DMA_CHANNELS];
@@ -97,11 +115,15 @@ int dma_deinit(dma_handle_t dma_handle);
 int dma_get_signal_index(dma_handle_t dma_handle);
 int dma_get_irqn(dma_handle_t dma_handle);
 
-#ifdef STM32_HASDMAMUX
+#if defined(STM32_HASDMAMUX) || defined(STM32_HASGPDMA)
 dma_handle_t stm32_find_dma(void);
 void stm32_dma_config_mux(dma_handle_t dma_handle, uint32_t mux_select);
 void stm32_dma_alloc_set_watermark(int value);
 int stm32_dma_alloc_get_watermark(void);
+#endif
+
+#if defined(STM32_HASGPDMA)
+void stm32_dma_set_align(dma_handle_t dma_handle, int is_src, int log2);
 #endif
 
 #ifdef __cplusplus

@@ -63,7 +63,7 @@ int usb_core_init(void){
     usb_state.transfers[i].transfered = 0;
   }
 
-#ifndef STM32C0XX
+#if !(defined(STM32C0XX) || defined(STM32C5XX))
   USB->BTABLE = 0;
 #endif
 

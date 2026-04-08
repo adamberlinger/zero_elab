@@ -39,6 +39,9 @@ int usb_clk_init(void){
 #ifdef STM32C0XX
   RCC->APBENR2 |= RCC_APBENR2_SYSCFGEN;
   RCC->APBENR1 |= RCC_APBENR1_CRSEN | RCC_APBENR1_USBEN;
+#elif STM32C5XX
+  RCC->APB1LENR |= RCC_APB1LENR_CRSEN;
+  RCC->APB2ENR |= RCC_APB2ENR_USBEN;
 #else
   RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
   RCC->APB1ENR |= RCC_APB1ENR_CRSEN | RCC_APB1ENR_USBEN;
@@ -68,6 +71,8 @@ int usb_clk_init(void){
       }
     }
   }
+#elif defined(STM32C5XX)
+  /* Nothing to do. Clock from HSI/3 */
 #elif defined(STM32C0XX)
   if(!(RCC->CR & RCC_CR_HSIUSB48RDY)){
     uint32_t tries = 0x2000000;
@@ -117,7 +122,7 @@ void usb_nvic_init(void){
 #ifdef STM32F1XX
   NVIC_EnableIRQ(USB_HP_CAN1_TX_IRQn);
   NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
-#elif defined(STM32C0XX)
+#elif defined(STM32C0XX) || defined(STM32C5XX)
   NVIC_EnableIRQ(USB_DRD_FS_IRQn);
 #else
   NVIC_EnableIRQ(USB_IRQn);

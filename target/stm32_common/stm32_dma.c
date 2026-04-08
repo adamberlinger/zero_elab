@@ -29,13 +29,10 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include "stm32_dma.h"
 
 dma_signal_slot_t dma_signals[NUM_DMA_CHANNELS];
-
-DMA_TypeDef *dma_get_controller(dma_handle_t dma_handle){
-    return (DMA_TypeDef*)((uint32_t)dma_handle & ~(uint32_t)(0x3FF));
-}
 
 int dma_set_callback(dma_handle_t dma_handle,dma_signal_callback_t callback,void* user_arg){
     int index = dma_get_signal_index(dma_handle);
@@ -62,11 +59,6 @@ void dma_generic_callback(void* _circular_buffer,dma_event_t dma_event){
     }
 }
 
-int dma_get_channel_num(dma_handle_t dma_handle){
-    /* TODO: remove division */
-    return (((uint32_t)dma_handle & 0x3FF) - 8) / 20;
-}
-
 void dma_call_signal(int index,dma_event_t dma_event){
     if(dma_signals[index].callback){
         dma_signals[index].callback(dma_signals[index].user_arg,dma_event);
@@ -78,6 +70,17 @@ void dma_global_init(void){
     for(i = 0; i < NUM_DMA_CHANNELS;++i){
         dma_signals[i].callback = (dma_signal_callback_t)0;
     }
+}
+
+#ifndef STM32_HASGPDMA
+
+DMA_TypeDef *dma_get_controller(dma_handle_t dma_handle){
+    return (DMA_TypeDef*)((uint32_t)dma_handle & ~(uint32_t)(0x3FF));
+}
+
+int dma_get_channel_num(dma_handle_t dma_handle){
+    /* TODO: remove division */
+    return (((uint32_t)dma_handle & 0x3FF) - 8) / 20;
 }
 
 int dma_init(dma_handle_t dma_handle,const dma_init_t* init_data){
@@ -190,3 +193,112 @@ void stm32_dma_config_mux(dma_handle_t dma_handle, uint32_t mux_select){
     DMAMUX1_Channel0[dma_num].CCR = (0x7F & mux_select);
 }
 #endif
+
+/* defined (STM32_HASGPDMA) */
+#else 
+
+int dma_get_channel_num(dma_handle_t dma_handle){
+    /* TODO: remove division */
+    return ((((uint32_t)dma_handle) - 0x50) & 0x7FF) / 0x80;
+}
+
+int dma_init(dma_handle_t dma_handle, const dma_init_t* init_data){
+    uint32_t tr1 = 0;
+    uint32_t tr2 = (dma_handle->CTR2 & 0xFF);
+    uint32_t size_log = (init_data->bytes == 4)?0x2:init_data->bytes-1;
+    int index = dma_get_signal_index(dma_handle);
+
+    /* TODO: enable only one ?? */
+#ifdef STM32H5XX
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPDMA1EN | RCC_AHB1ENR_GPDMA2EN;
+#elif defined(STM32C5XX)
+    RCC->AHB1ENR |= RCC_AHB1ENR_LPDMA1EN | RCC_AHB1ENR_LPDMA2EN;
+#endif
+
+    tr1 = (size_log) | ((size_log) << 16);
+
+    dma_signals[index].lli_address = (uint32_t)init_data->memory_address;
+    uint32_t base_addr = (uint32_t)&dma_signals[index].lli_address;
+
+    dma_handle->CLBAR = base_addr & 0xFFFF0000;
+    dma_handle->CLLR = base_addr & 0xFFFC;
+
+    /* Use port1 (SRAM) to load linked-list */
+    dma_handle->CCR = DMA_CCR_LAP;
+    if(init_data->direction == DMA_TO_MEMORY){
+        tr1 |= DMA_CTR1_DAP | DMA_CTR1_DINC;
+        dma_handle->CSAR = (uint32_t)init_data->periph_address;
+        dma_handle->CDAR = (uint32_t)init_data->memory_address;
+        dma_handle->CLLR |= DMA_CLLR_UDA;
+    }
+    else {
+        tr1 |= DMA_CTR1_SAP | DMA_CTR1_SINC;
+        dma_handle->CDAR = (uint32_t)init_data->periph_address;
+        dma_handle->CSAR = (uint32_t)init_data->memory_address;
+        tr2 |= DMA_CTR2_DREQ;
+    }
+
+    dma_handle->CTR1 = tr1;
+    dma_handle->CTR2 = tr2;
+    dma_handle->CBR1 = init_data->data_size * init_data->bytes;
+
+    return 0;
+}
+
+void stm32_dma_set_align(dma_handle_t dma_handle, int is_src, int log2){
+    uint32_t tr1 = dma_handle->CTR1;
+    if(is_src){
+        tr1 = (tr1 & ~(uint32_t)0x3) | log2;
+    }
+    else {
+        tr1 = (tr1 & ~(uint32_t)(0x3 << 16)) | (log2 << 16);
+    }
+    dma_handle->CTR1 = tr1;
+}
+
+int dma_deinit(dma_handle_t dma_handle){
+    dma_stop(dma_handle);
+    dma_handle->CTR2 = 0;
+
+    return 0;
+}
+
+void dma_start(dma_handle_t dma_handle, int circular){
+    uint32_t cllr = (dma_handle->CLLR & 0xFFFF);
+    if(circular){
+        int irqn = dma_get_irqn(dma_handle);
+        if(dma_handle->CTR1 & DMA_CTR1_SINC){
+            cllr |= DMA_CLLR_USA;
+        }
+        else {
+            cllr |= DMA_CLLR_UDA;
+        }
+        NVIC_SetPriority((IRQn_Type)irqn, 1);
+        NVIC_EnableIRQ((IRQn_Type)irqn);
+    }
+    dma_handle->CLLR = cllr;
+    dma_handle->CCR |= DMA_CCR_EN;
+}
+
+void dma_stop(dma_handle_t dma_handle){
+    dma_handle->CCR |= DMA_CCR_SUSP;
+    while((dma_handle->CSR & DMA_CSR_SUSPF) == 0);
+    dma_handle->CCR |= DMA_CCR_RESET;
+    dma_handle->CFCR = 0x7F00;
+}
+
+void dma_wait_for_complete(dma_handle_t dma_handle){
+    while((dma_handle->CSR & DMA_CSR_TCF) == 0);
+    dma_handle->CFCR = DMA_CFCR_TCF;
+}
+
+int dma_get_remaining_data(dma_handle_t dma_handle){
+    int bytes = (dma_handle->CTR1 & 0x3);
+    return (dma_handle->CBR1 & 0xFFFF) << bytes;
+}
+
+void stm32_dma_config_mux(dma_handle_t dma_handle, uint32_t mux_select){
+    dma_handle->CTR2 = (dma_handle->CTR2 & 0xFFFFFF00) | mux_select;
+}
+
+#endif /* STM32_HASGPDMA */

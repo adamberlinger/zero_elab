@@ -597,13 +597,13 @@ dma_handle_t timer_target_find_dma(int timer_id){
     int i;
     for(i = 0; i < TIM_DMA_DB_SIZE;++i){
         if(timer_dma_db[i].timer_id == timer_id){
-            #ifdef STM32_HASDMAMUX
+#if defined(STM32_HASDMAMUX) || defined(STM32_HASGPDMA)
             dma_handle_t result = stm32_find_dma();
             stm32_dma_config_mux(result, timer_dma_db[i].dmamux_select);
             return result;
-            #else
+#else
             return timer_dma_db[i].dma;
-            #endif
+#endif
         }
     }
     return (dma_handle_t)0;

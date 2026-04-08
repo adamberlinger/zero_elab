@@ -29,47 +29,46 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _USB_CONF_H
-#define _USB_CONF_H
+#ifdef DAC_PERIPH_ENABLED
 
-#include "stm32_common.h"
+#include "dac.h"
+#include "mem.h"
+#include "dac_target_db.h"
+#include "error_codes.h"
 
-#ifdef __cplusplus
-    extern "C" {
-#endif
-
-#ifdef STM32C0XX
-#define USB_SRAM_START_ADDRESS (0x40009800)
-#define USB_SRAM_32ACCESS
-#elif defined(STM32C5XX)
-#define USB_SRAM_START_ADDRESS (0x40016400)
-#define USB_SRAM_32ACCESS
-#else
-#define USB_SRAM_START_ADDRESS (0x40006000)
-#endif
-
-#define usb_ms_delay           wait_ms
-#define usb_interrupt          usb_handler
-
-#ifdef STM32F1XX
-  #define USB_SRAM_32BIT
-#endif
-
-#if defined(STM32C0XX) || defined(STM32C5XX)
-  #define USB USB_DRD_FS
-  #define EP0R CHEP0R
-  #define EP1R CHEP1R
-  #define EP2R CHEP2R
-  #define EP3R CHEP3R
-  #define EP4R CHEP4R
-  #define EP5R CHEP5R
-  #define EP6R CHEP6R
-  #define EP7R CHEP7R
-  #define USB_CNTR_FRES USB_CNTR_USBRST
-#endif
-
-#ifdef __cplusplus
+gpio_pin_t dac_target_find_pin(int dac_id,int channel){
+    uint8_t dac_channel = DEFINE_DAC_CHANNEL(dac_id,channel);
+    int i;
+    for(i = 0; i < DAC_PIN_DB_SIZE;++i){
+        if(dac_pin_db[i].dac_channel == dac_channel){
+            return dac_pin_db[i].pin;
+        }
     }
-#endif
+    return (gpio_pin_t)0;
+}
+
+int dac_target_find_timer(int dac_id,uint8_t* trigger_source){
+    int i;
+    for(i = 0; i < DAC_TIM_DB_SIZE;++i){
+        if(dac_tim_db[i].dac_id == dac_id && timer_is_free(dac_tim_db[i].timer_id)){
+            (*trigger_source) = dac_tim_db[i].trigger_source;
+            return dac_tim_db[i].timer_id;
+        }
+    }
+    return 0;
+}
+
+dma_handle_t dac_target_find_dma(int dac_id,int channel){
+    uint8_t dac_channel = DEFINE_DAC_CHANNEL(dac_id,channel);
+    int i;
+    for(i = 0; i < DAC_DMA_DB_SIZE;++i){
+        if(dac_dma_db[i].dac_channel == dac_channel){
+            dma_handle_t result = stm32_find_dma();
+            stm32_dma_config_mux(result, dac_dma_db[i].dmamux_select);
+            return result;
+        }
+    }
+    return (dma_handle_t)0;
+}
 
 #endif

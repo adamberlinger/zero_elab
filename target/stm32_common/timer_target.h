@@ -111,14 +111,14 @@ typedef struct {
 
 typedef struct {
     int timer_id;
-#ifdef STM32_HASDMAMUX
+#if defined(STM32_HASDMAMUX) || defined(STM32_HASGPDMA)
     uint32_t dmamux_select;
 #else
     dma_handle_t dma;
 #ifdef DMA_TARGET_SOURCE_SELECT
     uint8_t dma_select;
 #endif
-#endif
+#endif /* defined(STM32_HASDMAMUX) || defined(STM32_HASGPDMA) */
 }timer_dma_db_t;
 
 #define DEFINE_TIM_CHANNEL(tim,channel) (uint8_t)(((tim & 0x1F) << 3) | (channel & 0x7))

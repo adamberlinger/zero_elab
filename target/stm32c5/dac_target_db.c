@@ -29,47 +29,24 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _USB_CONF_H
-#define _USB_CONF_H
+#include "dac_target_db.h"
 
-#include "stm32_common.h"
+#define DAC_PIN_ENTRY(dac_id,dac_channel,port,pin) {DEFINE_DAC_CHANNEL(dac_id,dac_channel),DEFINE_PIN(port,pin)}
 
-#ifdef __cplusplus
-    extern "C" {
+const dac_pin_db_t dac_pin_db[DAC_PIN_DB_SIZE] = {
+    DAC_PIN_ENTRY(1, 1, GPIOA_BASE, 4),
+#ifdef DAC_CR_EN2
+    DAC_PIN_ENTRY(1, 2, GPIOA_BASE, 5),
 #endif
+};
 
-#ifdef STM32C0XX
-#define USB_SRAM_START_ADDRESS (0x40009800)
-#define USB_SRAM_32ACCESS
-#elif defined(STM32C5XX)
-#define USB_SRAM_START_ADDRESS (0x40016400)
-#define USB_SRAM_32ACCESS
-#else
-#define USB_SRAM_START_ADDRESS (0x40006000)
+const dac_dma_db_t dac_dma_db[DAC_DMA_DB_SIZE] = {
+    {DEFINE_DAC_CHANNEL(1,1), 73},
+#ifdef DAC_CR_EN2
+    {DEFINE_DAC_CHANNEL(1,2), 74},
 #endif
-
-#define usb_ms_delay           wait_ms
-#define usb_interrupt          usb_handler
-
-#ifdef STM32F1XX
-  #define USB_SRAM_32BIT
-#endif
-
-#if defined(STM32C0XX) || defined(STM32C5XX)
-  #define USB USB_DRD_FS
-  #define EP0R CHEP0R
-  #define EP1R CHEP1R
-  #define EP2R CHEP2R
-  #define EP3R CHEP3R
-  #define EP4R CHEP4R
-  #define EP5R CHEP5R
-  #define EP6R CHEP6R
-  #define EP7R CHEP7R
-  #define USB_CNTR_FRES USB_CNTR_USBRST
-#endif
-
-#ifdef __cplusplus
-    }
-#endif
-
-#endif
+};
+const dac_tim_db_t dac_tim_db[DAC_TIM_DB_SIZE] = {
+    {1, 6, 6},
+    {1, 7, 7},
+};

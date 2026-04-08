@@ -29,47 +29,10 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _USB_CONF_H
-#define _USB_CONF_H
+#ifndef _STM32C5_INTERRUPTS_H_
+#define _STM32C5_INTERRUPTS_H_
 
-#include "stm32_common.h"
 
-#ifdef __cplusplus
-    extern "C" {
-#endif
 
-#ifdef STM32C0XX
-#define USB_SRAM_START_ADDRESS (0x40009800)
-#define USB_SRAM_32ACCESS
-#elif defined(STM32C5XX)
-#define USB_SRAM_START_ADDRESS (0x40016400)
-#define USB_SRAM_32ACCESS
-#else
-#define USB_SRAM_START_ADDRESS (0x40006000)
-#endif
+#endif /* _STM32C0_INTERRUPTS_H_ */
 
-#define usb_ms_delay           wait_ms
-#define usb_interrupt          usb_handler
-
-#ifdef STM32F1XX
-  #define USB_SRAM_32BIT
-#endif
-
-#if defined(STM32C0XX) || defined(STM32C5XX)
-  #define USB USB_DRD_FS
-  #define EP0R CHEP0R
-  #define EP1R CHEP1R
-  #define EP2R CHEP2R
-  #define EP3R CHEP3R
-  #define EP4R CHEP4R
-  #define EP5R CHEP5R
-  #define EP6R CHEP6R
-  #define EP7R CHEP7R
-  #define USB_CNTR_FRES USB_CNTR_USBRST
-#endif
-
-#ifdef __cplusplus
-    }
-#endif
-
-#endif
