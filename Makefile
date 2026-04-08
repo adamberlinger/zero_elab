@@ -101,8 +101,8 @@ $(HEX_FILE): $(ELF_FILE)
 $(DFU_FILE): $(BIN_FILE)
 	python ./tools/dfu.py -b 0x08000000:$(BIN_FILE) $(DFU_FILE)
 
-dfu-load: $(DFU_FILE)
-	dfu-util -a 0 -D $(DFU_FILE)
+dfu-load: $(HEX_FILE)
+	dfu-util -a 0 -D $(HEX_FILE)
 
 # Include generated dependency files
 # This allows recompiling only necessary modules

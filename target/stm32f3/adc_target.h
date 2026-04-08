@@ -433,6 +433,7 @@ public:
           timer_stop(&this->timer);
       }
       dma_stop(this->dma);
+      this->regs->CR |= ADC_CR_ADSTP;
     }
 
     void stopPrecise(uint32_t sample_number){

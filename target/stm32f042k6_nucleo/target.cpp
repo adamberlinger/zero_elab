@@ -153,7 +153,7 @@ static void init_oscilloscope_variant(){
     OSC_MODULE_PREPARE(osc1,1);
 
     log_buffer = buffer_additional_alloc(OSC_MODULE_GET_BUFFER(osc1),512);
-    timer_target_configure_custom_dma(&osc1_adc_handle.timer,(void*)&GPIOB->IDR,log_buffer);
+    timer_target_configure_custom_dma(osc1_adc_handle->getTimer(),(void*)&GPIOB->IDR,log_buffer);
 
     OSC_MODULE_INIT(osc1);
     OSC_MODULE_LIMIT_FREQUENCY(osc1,600000);
@@ -172,9 +172,9 @@ uint32_t get_target_capabilities(){
 
 void set_next_device_configuration(){
     current_config = (1+current_config) & 0x1;
-    module_remove_all();
+    Module::removeAll();
+    OSC_MODULE_DEINIT(osc1);
     mem_free();
-    adc_unlock_all();
     timer_unlock_all();
     if(!current_config){
         target_configuration_name = "Voltmeter";
@@ -189,5 +189,5 @@ void set_next_device_configuration(){
 void functions_init(void){
     target_configuration_name = "Voltmeter";
     init_voltmeter_variant();
-    vdda_value = volt_get_vdda(&volt1_volt_handle);
+    vdda_value = volt1_module->getVDDA();
 }

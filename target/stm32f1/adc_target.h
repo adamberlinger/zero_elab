@@ -405,6 +405,8 @@ public:
           timer_stop(&this->timer);
       }
       dma_stop(this->dma);
+      this->regs->CR2 &= ~ADC_CR2_ADON;
+      while(this->regs->CR2 & ADC_CR2_ADON) continue;
     }
 
     void stopPrecise(uint32_t sample_number){
